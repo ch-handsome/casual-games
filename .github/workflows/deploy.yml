@@ -28,6 +28,7 @@ jobs:
 
       - name: Deploy 🔧
         run: |
+          pnpm approve-builds
           pnpm install --no-frozen-lockfile
           pnpm build
           cd dist
