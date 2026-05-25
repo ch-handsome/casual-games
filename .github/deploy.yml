@@ -1,53 +1,40 @@
-name: Deploy to GitHub Pages
-
+name: Build and Deploy
+permissions:
+  contents: write
 on:
   push:
-    branches: ["main"] # 如果你的默认分支是 master，请改为 master
+    branches:
+      - main
 
 jobs:
-  build-and-deploy:
+  deploy:
+    concurrency: ci-${{ github.ref }}
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: Checkout 🛎️
+        uses: actions/checkout@v6
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Install Node.js
+        uses: actions/setup-node@v6
         with:
-          node-version: "22"
+          node-version: 24
+          registry-url: https://registry.npmjs.org/
 
-      # 新增：安装 pnpm
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4 # 官方 pnpm Action
+      - uses: pnpm/action-setup@v6
+        name: Install pnpm
         with:
-          version: 10 # 指定 pnpm 版本
+          version: 11
+          run_install: false
 
-      # 新增：让后续命令能正确识别 pnpm 安装的依赖
-      - name: Get pnpm store directory
-        shell: bash
+      - name: Deploy 🔧
         run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+          pnpm install --no-frozen-lockfile
+          pnpm build
+          cd dist
+          touch .nojekyll
 
-      - uses: actions/cache@v4
-        name: Setup pnpm cache
+      - name: Deploy 🚀
+        uses: JamesIves/github-pages-deploy-action@v4
         with:
-          path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-
-      # 修改：用 pnpm install 代替 npm ci
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile # --frozen-lockfile 相当于 npm ci
-
-      # 修改：用 pnpm run build 代替 npm run build
-      - name: Build the project
-        run: pnpm run build
-
-      # 部署部分无需修改，只要编译输出文件夹路径正确即可
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./dist # 如果是 Vite 项目，这里改为 ./dist
+          folder: dist
+          clean: true
