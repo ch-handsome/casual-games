@@ -2,11 +2,13 @@ import { Navigate, createHashRouter } from 'react-router-dom'
 import GameSnake from '../page/games/snake'
 import Game2048 from '../page/games/2048'
 import GameTetris from '../page/games/tetris'
+import GameEliminate from '../page/games/eliminate'
 import Layout from '../components/Layout'
 import { config } from './config'
 
 const elements = {
   '2048': <Game2048 />,
+  'eliminate': <GameEliminate />,
   'snake': <GameSnake />,
   'tetris': <GameTetris />,
 }

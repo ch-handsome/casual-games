@@ -590,13 +590,13 @@ export default function SnakeGame() {
           <div className="flex gap-3">
             <button
               onClick={handlePause}
-              className="px-5 py-3 bg-gradient-to-br from-[#0f3460] to-[#16213e] text-[#00ffff] border border-[#00ffff] rounded-lg text-sm font-semibold uppercase tracking-wider cursor-pointer transition-all duration-300 hover:bg-[#00ffff] hover:text-[#1a1a2e] hover:shadow-[0_0_20px_rgba(0,255,255,0.4)]"
+              className="px-5 py-2.5 bg-gradient-to-b from-[#00cc6a] to-[#009950] text-white rounded-lg text-sm font-semibold uppercase tracking-wider cursor-pointer transition-all duration-100 border-t border-[#4dffa0] shadow-[0_4px_0_#006633,0_5px_10px_rgba(0,0,0,0.3)] hover:shadow-[0_4px_0_#006633,0_6px_15px_rgba(0,0,0,0.4)] active:shadow-[0_2px_0_#006633,0_2px_5px_rgba(0,0,0,0.3)] active:translate-y-1"
             >
               {(isPaused && !gameRunning) ? '开始' : (isPaused ? '继续' : '暂停')}
             </button>
             <button
               onClick={handleRestart}
-              className="px-5 py-3 bg-gradient-to-br from-[#e94560] to-[#c73e54] text-white rounded-lg text-sm font-semibold uppercase tracking-wider cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-[0_0_20px_rgba(233,69,96,0.4)]"
+              className="px-5 py-2.5 bg-gradient-to-b from-[#e94560] to-[#c73e54] text-white rounded-lg text-sm font-semibold uppercase tracking-wider cursor-pointer transition-all duration-100 border-t border-[#f06a82] shadow-[0_4px_0_#9c2a3d,0_5px_10px_rgba(0,0,0,0.3)] hover:shadow-[0_4px_0_#9c2a3d,0_6px_15px_rgba(0,0,0,0.4)] active:shadow-[0_2px_0_#9c2a3d,0_2px_5px_rgba(0,0,0,0.3)] active:translate-y-1"
             >
               重新开始
             </button>
@@ -620,7 +620,7 @@ export default function SnakeGame() {
               </div>
               <button
                 onClick={handlePlayAgain}
-                className="px-12 py-4 text-lg bg-gradient-to-br from-[#00ff88] to-[#00cc6a] text-[#1a1a2e] rounded-xl font-bold cursor-pointer transition-all duration-300 uppercase tracking-wider hover:scale-110 hover:shadow-[0_0_30px_rgba(0,255,136,0.6)]"
+                className="px-12 py-3.5 text-lg bg-gradient-to-b from-[#00ff88] to-[#00cc6a] text-[#1a1a2e] rounded-xl font-bold cursor-pointer transition-all duration-100 border-t border-[#4dffa0] shadow-[0_4px_0_#009950,0_5px_10px_rgba(0,0,0,0.3)] hover:shadow-[0_4px_0_#009950,0_6px_15px_rgba(0,255,136,0.4)] active:shadow-[0_2px_0_#009950,0_2px_5px_rgba(0,0,0,0.3)] active:translate-y-1 uppercase tracking-wider"
               >
                 再玩一次
               </button>

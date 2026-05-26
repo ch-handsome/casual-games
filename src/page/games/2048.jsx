@@ -341,7 +341,7 @@ export default function Game2048() {
           </div>
           <button
             onClick={handleNewGame}
-            className="px-6 py-3 bg-[#8f7a66] text-[#f9f6f2] rounded-md text-base font-bold cursor-pointer transition-colors duration-200 hover:bg-[#7f6a56] active:scale-95"
+            className="px-6 py-3 bg-gradient-to-b from-[#8f7a66] to-[#6b5a4e] text-[#f9f6f2] rounded-md text-base font-bold cursor-pointer transition-all duration-100 border-t border-[#a08b76] shadow-[0_4px_0_#4a3c2e,0_5px_10px_rgba(0,0,0,0.3)] hover:shadow-[0_4px_0_#4a3c2e,0_6px_15px_rgba(0,0,0,0.4)] active:shadow-[0_2px_0_#4a3c2e,0_2px_5px_rgba(0,0,0,0.3)] active:translate-y-1"
           >
             新游戏
           </button>
@@ -407,14 +407,14 @@ export default function Game2048() {
           <div className="flex gap-4 justify-center flex-wrap">
             <button
               onClick={handleRetry}
-              className="px-7 py-4 text-base font-bold bg-[#8f7a66] text-[#f9f6f2] rounded-md cursor-pointer transition-colors duration-200 hover:bg-[#7f6a56] active:scale-95"
+              className="px-7 py-3.5 text-base font-bold bg-gradient-to-b from-[#8f7a66] to-[#6b5a4e] text-[#f9f6f2] rounded-md cursor-pointer transition-all duration-100 border-t border-[#a08b76] shadow-[0_4px_0_#4a3c2e,0_5px_10px_rgba(0,0,0,0.3)] hover:shadow-[0_4px_0_#4a3c2e,0_6px_15px_rgba(0,0,0,0.4)] active:shadow-[0_2px_0_#4a3c2e,0_2px_5px_rgba(0,0,0,0.3)] active:translate-y-1"
             >
               再试一次
             </button>
             {isWin && (
               <button
                 onClick={handleContinue}
-                className="px-7 py-4 text-base font-bold bg-[#c2b280] text-[#f9f6f2] rounded-md cursor-pointer transition-colors duration-200 hover:bg-[#b2a270] active:scale-95"
+                className="px-7 py-3.5 text-base font-bold bg-gradient-to-b from-[#c2b280] to-[#a09060] text-[#f9f6f2] rounded-md cursor-pointer transition-all duration-100 border-t border-[#d4c496] shadow-[0_4px_0_#6b5a4e,0_5px_10px_rgba(0,0,0,0.3)] hover:shadow-[0_4px_0_#6b5a4e,0_6px_15px_rgba(0,0,0,0.4)] active:shadow-[0_2px_0_#6b5a4e,0_2px_5px_rgba(0,0,0,0.3)] active:translate-y-1"
               >
                 继续游戏
               </button>
