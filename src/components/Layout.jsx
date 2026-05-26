@@ -40,7 +40,7 @@ export default function Layout() {
           </NavLink>
         ))}
       </div>
-      <div className="flex-1 flex justify-center items-center overflow-auto p-5">
+      <div className="flex-1 flex justify-center items-center overflow-auto p-5 pt-0">
         <Outlet />
       </div>
     </div>
