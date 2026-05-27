@@ -324,16 +324,20 @@ export default function Game2048() {
 
   return (
     <div className="h-full flex items-center justify-center p-5 w-full max-w-[500px]">
-      <div className="w-full bg-black/40 backdrop-blur-md rounded-2xl p-5 flex flex-col gap-5 shadow-[0_8px_32px_rgba(0,0,0,0.3)]">
+      {/* 3D立体容器 */}
+      <div className="relative w-full rounded-2xl p-5 flex flex-col gap-5 bg-gradient-to-b from-[#3d3d5c] to-[#2d2d4a] shadow-[inset_0_2px_0_rgba(255,255,255,0.1),inset_0_-2px_0_rgba(0,0,0,0.3),0_10px_0_#1e1e36,0_15px_30px_rgba(0,0,0,0.4)]">
+        {/* 容器内阴影层 */}
+        <div className="absolute inset-0 rounded-2xl shadow-[inset_0_0_30px_rgba(0,0,0,0.2)] pointer-events-none" />
+
         <div className="flex justify-between items-center flex-wrap gap-3">
           <div className="flex items-center gap-3">
             <h1 className="text-5xl font-bold text-white text-shadow-[2px_2px_4px_rgba(0,0,0,0.3)]">2048</h1>
             <div className="flex gap-2">
-              <div className="bg-[rgba(238,228,218,0.35)] rounded-md px-4 py-2 text-center min-w-[80px]">
+              <div className="relative bg-gradient-to-b from-[#4a4a6a] to-[#3a3a5a] rounded-md px-4 py-2 text-center min-w-[80px] shadow-[inset_0_-2px_0_rgba(0,0,0,0.3),inset_0_2px_0_rgba(255,255,255,0.1),0_3px_0_#252540]">
                 <div className="text-[#eee4da] text-xs uppercase tracking-wider">分数</div>
                 <div className="text-white text-xl font-bold">{score}</div>
               </div>
-              <div className="bg-[rgba(238,228,218,0.35)] rounded-md px-4 py-2 text-center min-w-[80px]">
+              <div className="relative bg-gradient-to-b from-[#4a4a6a] to-[#3a3a5a] rounded-md px-4 py-2 text-center min-w-[80px] shadow-[inset_0_-2px_0_rgba(0,0,0,0.3),inset_0_2px_0_rgba(255,255,255,0.1),0_3px_0_#252540]">
                 <div className="text-[#eee4da] text-xs uppercase tracking-wider">最高</div>
                 <div className="text-white text-xl font-bold">{bestScore}</div>
               </div>
@@ -349,7 +353,7 @@ export default function Game2048() {
 
         <div
           id="game-board"
-          className="grid grid-cols-4 grid-rows-4 gap-[15px] bg-[rgba(238,228,218,0.35)] rounded-xl p-[15px] aspect-square touch-none"
+          className="grid grid-cols-4 grid-rows-4 gap-[15px] bg-gradient-to-b from-[#bbada0] to-[#a99d8d] rounded-xl p-[15px] aspect-square touch-none shadow-[inset_0_4px_8px_rgba(0,0,0,0.2),0_2px_0_rgba(255,255,255,0.1)]"
         >
           {grid.map((row, rowIndex) =>
             row.map((value, colIndex) => {
@@ -360,7 +364,7 @@ export default function Game2048() {
               return (
                 <div
                   key={`${rowIndex}-${colIndex}`}
-                  className="bg-[rgba(238,228,218,0.35)] rounded-xl flex items-center justify-center font-bold relative transition-transform duration-100"
+                  className="bg-gradient-to-b from-[#cdc1b4] to-[#bbaea0] rounded-xl flex items-center justify-center font-bold relative transition-transform duration-100 shadow-[inset_0_-2px_0_rgba(0,0,0,0.1),0_2px_0_rgba(255,255,255,0.3)]"
                   style={{ aspectRatio: '1' }}
                 >
                   {value !== 0 && (

@@ -696,20 +696,24 @@ export default function EliminateGame() {
 
   return (
     <div className="h-full flex flex-col justify-center items-center p-4">
-      <div className="w-full bg-black/40 backdrop-blur-md rounded-2xl p-5 flex flex-col gap-4 shadow-[0_8px_32px_rgba(0,0,0,0.3)]">
+      {/* 3D立体容器 */}
+      <div className="relative w-full rounded-2xl p-5 flex flex-col gap-4 bg-gradient-to-b from-[#3d3d5c] to-[#2d2d4a] shadow-[inset_0_2px_0_rgba(255,255,255,0.1),inset_0_-2px_0_rgba(0,0,0,0.3),0_10px_0_#1e1e36,0_15px_30px_rgba(0,0,0,0.4)]">
+        {/* 容器内阴影层 */}
+        <div className="absolute inset-0 rounded-2xl shadow-[inset_0_0_30px_rgba(0,0,0,0.2)] pointer-events-none" />
+
         {/* 顶部信息栏 */}
         <div className="flex flex-wrap items-center justify-between gap-4">
           {/* 左侧：分数统计 */}
           <div className="flex items-center gap-3 flex-wrap">
-            <div className="bg-[rgba(255,255,255,0.15)] backdrop-blur-md rounded-lg px-4 py-2 text-center min-w-[70px]">
+            <div className="relative bg-gradient-to-b from-[#4a4a6a] to-[#3a3a5a] rounded-lg px-4 py-2 text-center min-w-[70px] shadow-[inset_0_-2px_0_rgba(0,0,0,0.3),inset_0_2px_0_rgba(255,255,255,0.1),0_3px_0_#252540]">
               <div className="text-[rgba(255,255,255,0.7)] text-xs">分数</div>
               <div className="text-white text-lg font-bold">{score}</div>
             </div>
-            <div className="bg-[rgba(255,255,255,0.15)] backdrop-blur-md rounded-lg px-4 py-2 text-center min-w-[70px]">
+            <div className="relative bg-gradient-to-b from-[#4a4a6a] to-[#3a3a5a] rounded-lg px-4 py-2 text-center min-w-[70px] shadow-[inset_0_-2px_0_rgba(0,0,0,0.3),inset_0_2px_0_rgba(255,255,255,0.1),0_3px_0_#252540]">
               <div className="text-[rgba(255,255,255,0.7)] text-xs">最高</div>
               <div className="text-white text-lg font-bold">{bestScore}</div>
             </div>
-            <div className="bg-[rgba(255,215,0,0.3)] backdrop-blur-md rounded-lg px-4 py-2 text-center min-w-[70px]">
+            <div className="relative bg-gradient-to-b from-[#5a4a1a] to-[#4a3a0a] rounded-lg px-4 py-2 text-center min-w-[70px] shadow-[inset_0_-2px_0_rgba(0,0,0,0.3),inset_0_2px_0_rgba(255,255,255,0.1),0_3px_0_#302a05]">
               <div className="text-[rgba(255,215,0,0.9)] text-xs">等级</div>
               <div className="text-[#ffd700] text-lg font-bold">{level}</div>
             </div>

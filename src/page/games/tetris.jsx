@@ -434,13 +434,17 @@ export default function Tetris() {
 
   return (
     <div className="h-full flex items-center justify-center w-full overflow-hidden">
-      <div className="flex flex-col items-center gap-3 overflow-hidden bg-black/40 p-5 rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.3)">
+      {/* 3D立体容器 */}
+      <div className="relative flex flex-col items-center gap-3 overflow-hidden bg-gradient-to-b from-[#3d3d5c] to-[#2d2d4a] p-5 rounded-xl shadow-[inset_0_2px_0_rgba(255,255,255,0.1),inset_0_-2px_0_rgba(0,0,0,0.3),0_10px_0_#1e1e36,0_15px_30px_rgba(0,0,0,0.4)]">
+        {/* 容器内阴影层 */}
+        <div className="absolute inset-0 rounded-xl shadow-[inset_0_0_30px_rgba(0,0,0,0.2)] pointer-events-none" />
+
         {/* Game Area */}
-        <div className="flex gap-5 items-start">
+        <div className="flex gap-5 items-start relative z-10">
           {/* Main Board */}
-          <div className="relative  border border-white/10 p-2 rounded-lg backdrop-blur-md bg-black/40">
+          <div className="relative border border-white/10 p-2 rounded-lg bg-gradient-to-b from-[#2a2a3e] to-[#1a1a2e] shadow-[inset_0_2px_4px_rgba(0,0,0,0.3),0_2px_0_rgba(255,255,255,0.05)]">
             <div
-              className="grid gap-[1px] bg-white/5"
+              className="grid gap-[1px]"
               style={{
                 gridTemplateColumns: `repeat(${COLS}, 1fr)`,
                 width: isMobile.current ? '260px' : '300px',
@@ -504,17 +508,17 @@ export default function Tetris() {
           {/* Side Panel */}
           <div className="flex flex-col gap-3 w-24">
             {/* Score Info */}
-            <div className="bg-black/40 backdrop-blur-sm rounded-xl p-2 border border-white/10">
+            <div className="relative bg-gradient-to-b from-[#2a2a3e] to-[#1a1a2e] rounded-xl p-2 border border-white/10 shadow-[inset_0_2px_4px_rgba(0,0,0,0.3),0_2px_0_rgba(255,255,255,0.05)]">
               <div className="flex flex-col gap-2">
-                <div className="bg-white/10 rounded-lg px-2 py-1 text-center">
+                <div className="bg-gradient-to-b from-[#3a3a4a] to-[#2a2a3a] rounded-lg px-2 py-1 text-center shadow-[inset_0_-1px_0_rgba(0,0,0,0.2)]">
                   <div className="text-white/60 text-xs">分数</div>
                   <div className="text-white text-base font-bold">{score}</div>
                 </div>
-                <div className="bg-white/10 rounded-lg px-2 py-1 text-center">
+                <div className="bg-gradient-to-b from-[#3a3a4a] to-[#2a2a3a] rounded-lg px-2 py-1 text-center shadow-[inset_0_-1px_0_rgba(0,0,0,0.2)]">
                   <div className="text-white/60 text-xs">最高</div>
                   <div className="text-white text-base font-bold">{bestScore}</div>
                 </div>
-                <div className="bg-white/10 rounded-lg px-2 py-1 text-center">
+                <div className="bg-gradient-to-b from-[#3a3a4a] to-[#2a2a3a] rounded-lg px-2 py-1 text-center shadow-[inset_0_-1px_0_rgba(0,0,0,0.2)]">
                   <div className="text-white/60 text-xs">等级</div>
                   <div className="text-white text-base font-bold">{level}</div>
                 </div>
@@ -522,7 +526,7 @@ export default function Tetris() {
             </div>
 
             {/* Next Piece */}
-            <div className="bg-black/40 backdrop-blur-sm rounded-xl p-2 border border-white/10">
+            <div className="relative bg-gradient-to-b from-[#2a2a3e] to-[#1a1a2e] rounded-xl p-2 border border-white/10 shadow-[inset_0_2px_4px_rgba(0,0,0,0.3),0_2px_0_rgba(255,255,255,0.05)]">
               <div className="text-white/70 text-xs mb-1 text-center">下一个</div>
               <div className="aspect-square w-full">
                 {nextPiece && renderPreview(nextPiece.shape, nextPiece.color)}

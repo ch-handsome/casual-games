@@ -10,7 +10,7 @@ const CONFIG = {
 }
 
 const COLORS = {
-  background: '#16213e',
+  background: '#1b1b29',
   gridLine: 'rgba(255, 255, 255, 0.05)',
   snakeHead: '#00ff88',
   snakeBody: ['#00dd77', '#00cc6a', '#00aa55', '#008844'],
@@ -575,40 +575,49 @@ export default function SnakeGame() {
 
   return (
     <div ref={containerRef} className="h-full flex flex-col items-center justify-center p-5 w-full max-w-[500px]">
-      <div className="w-full bg-black/40 backdrop-blur-md rounded-2xl p-5 flex flex-col gap-5 shadow-[0_8px_32px_rgba(0,0,0,0.3)]">
+      {/* 3D立体容器 */}
+      <div className="relative w-full rounded-2xl p-5 flex flex-col gap-5 bg-gradient-to-b from-[#3d3d5c] to-[#2d2d4a] shadow-[inset_0_2px_0_rgba(255,255,255,0.1),inset_0_-2px_0_rgba(0,0,0,0.3),0_10px_0_#1e1e36,0_15px_30px_rgba(0,0,0,0.4)]">
+        {/* 容器内阴影层 */}
+        <div className="absolute inset-0 rounded-2xl shadow-[inset_0_0_30px_rgba(0,0,0,0.2)] pointer-events-none" />
+
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div className="flex gap-2">
-            <div className="bg-[rgba(238,228,218,0.35)] rounded-md px-4 py-2 text-center min-w-[80px]">
-              <div className="text-[#eee4da] text-xs uppercase tracking-wider">分数</div>
+            <div className="relative bg-gradient-to-b from-[#4a4a6a] to-[#3a3a5a] rounded-md px-4 py-2 text-center min-w-[80px] shadow-[inset_0_-2px_0_rgba(0,0,0,0.3),inset_0_2px_0_rgba(255,255,255,0.1),0_3px_0_#252540]">
+              <div className="text-[rgba(255,255,255,0.7)] text-xs uppercase tracking-wider">分数</div>
               <div className="text-white text-xl font-bold">{score}</div>
             </div>
-            <div className="bg-[rgba(238,228,218,0.35)] rounded-md px-4 py-2 text-center min-w-[80px]">
-              <div className="text-[#eee4da] text-xs uppercase tracking-wider">最高分</div>
+            <div className="relative bg-gradient-to-b from-[#4a4a6a] to-[#3a3a5a] rounded-md px-4 py-2 text-center min-w-[80px] shadow-[inset_0_-2px_0_rgba(0,0,0,0.3),inset_0_2px_0_rgba(255,255,255,0.1),0_3px_0_#252540]">
+              <div className="text-[rgba(255,255,255,0.7)] text-xs uppercase tracking-wider">最高分</div>
               <div className="text-white text-xl font-bold">{bestScore}</div>
             </div>
           </div>
           <div className="flex gap-3">
             <button
               onClick={handlePause}
-              className="px-5 py-2.5 bg-gradient-to-b from-[#00cc6a] to-[#009950] text-white rounded-lg text-sm font-semibold uppercase tracking-wider cursor-pointer transition-all duration-100 border-t border-[#4dffa0] shadow-[0_4px_0_#006633,0_5px_10px_rgba(0,0,0,0.3)] hover:shadow-[0_4px_0_#006633,0_6px_15px_rgba(0,0,0,0.4)] active:shadow-[0_2px_0_#006633,0_2px_5px_rgba(0,0,0,0.3)] active:translate-y-1"
+              className="px-5 py-2.5 bg-gradient-to-b from-[#00cc6a] to-[#009950] text-white rounded-lg text-base font-bold uppercase tracking-wider cursor-pointer transition-all duration-100 border-t border-[#4dffa0] shadow-[0_4px_0_#006633,0_5px_10px_rgba(0,0,0,0.3)] hover:shadow-[0_4px_0_#006633,0_6px_15px_rgba(0,0,0,0.4)] active:shadow-[0_2px_0_#006633,0_2px_5px_rgba(0,0,0,0.3)] active:translate-y-1"
             >
               {(isPaused && !gameRunning) ? '开始' : (isPaused ? '继续' : '暂停')}
             </button>
             <button
               onClick={handleRestart}
-              className="px-5 py-2.5 bg-gradient-to-b from-[#e94560] to-[#c73e54] text-white rounded-lg text-sm font-semibold uppercase tracking-wider cursor-pointer transition-all duration-100 border-t border-[#f06a82] shadow-[0_4px_0_#9c2a3d,0_5px_10px_rgba(0,0,0,0.3)] hover:shadow-[0_4px_0_#9c2a3d,0_6px_15px_rgba(0,0,0,0.4)] active:shadow-[0_2px_0_#9c2a3d,0_2px_5px_rgba(0,0,0,0.3)] active:translate-y-1"
+              className="px-5 py-2.5 bg-gradient-to-b from-[#e94560] to-[#c73e54] text-white rounded-lg text-base font-bold uppercase tracking-wider cursor-pointer transition-all duration-100 border-t border-[#f06a82] shadow-[0_4px_0_#9c2a3d,0_5px_10px_rgba(0,0,0,0.3)] hover:shadow-[0_4px_0_#9c2a3d,0_6px_15px_rgba(0,0,0,0.4)] active:shadow-[0_2px_0_#9c2a3d,0_2px_5px_rgba(0,0,0,0.3)] active:translate-y-1"
             >
-              重新开始
+              新游戏
             </button>
           </div>
         </div>
 
         <div className="relative w-full">
-          <canvas
-            ref={canvasRef}
-            className="w-full shadow-[0_10px_40px_rgba(0,0,0,0.5),0_0_60px_rgba(0,255,136,0.1)] cursor-crosshair rounded-xl"
-            style={{ aspectRatio: '1' }}
-          />
+          {/* 3D立体画布容器 */}
+          <div className="relative border border-white/10 p-2 rounded-lg bg-gradient-to-b from-[#2a2a3e] to-[#1a1a2e] shadow-[inset_0_2px_4px_rgba(0,0,0,0.3),0_2px_0_rgba(255,255,255,0.05)]">
+            {/* 内阴影层 */}
+            <div className="absolute inset-3 rounded-lg shadow-[inset_0_0_20px_rgba(0,0,0,0.4)] pointer-events-none" />
+            <canvas
+              ref={canvasRef}
+              className="w-full relative z-10 shadow-[0_0_30px_rgba(0,255,136,0.15)] cursor-crosshair"
+              style={{ aspectRatio: '1' }}
+            />
+          </div>
 
           {showGameOver && (
             <div className="absolute inset-0 bg-black/85 rounded-xl flex flex-col items-center justify-center gap-5 backdrop-blur-sm animate-[fadeIn_0.3s_ease]">
