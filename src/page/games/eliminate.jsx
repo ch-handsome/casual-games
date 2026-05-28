@@ -128,21 +128,21 @@ function applyGravity(board) {
           toRow: row + emptyCount,
           col: col
         })
-        // 更新棋盘数据
+        // 更新棋盘数据 - 移动现有方块
         newBoard[row + emptyCount][col] = newBoard[row][col]
         newBoard[row][col] = -1
       }
     }
 
-    // 顶部空缺需要生成新方块
+    // 顶部空缺需要生成新方块信息（不立即添加到棋盘）
     for (let i = 0; i < emptyCount; i++) {
-      const color = Math.floor(Math.random() * CONFIG.COLORS)
       newBlocks.push({
         row: i,
         col: col,
-        color: color
+        color: Math.floor(Math.random() * CONFIG.COLORS)
       })
-      newBoard[i][col] = color
+      // 新方块位置暂时留空（-1），动画完成后再填充
+      newBoard[i][col] = -1
     }
   }
 
@@ -639,6 +639,7 @@ export default function EliminateGame() {
       // ===== 两阶段下落 =====
 
       // 调用 applyGravity 获取下落关系和新方块信息
+      // 注意：新方块暂时不放入棋盘（位置为-1），等动画完成后再填充
       const { board: newBoard, dropMoves, newBlocks } = applyGravity(boardRef.current)
       boardRef.current = newBoard
 
@@ -669,7 +670,12 @@ export default function EliminateGame() {
       }
 
       // 第二阶段：新方块从顶部滑入动画
+      // 先将新方块颜色放入棋盘（位置为-1表示待显示）
       if (newBlocks.length > 0) {
+        newBlocks.forEach(block => {
+          boardRef.current[block.row][block.col] = block.color
+        })
+
         const fallAnimations = newBlocks.map(block => ({
           row: block.row,
           col: block.col,
