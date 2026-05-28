@@ -394,16 +394,33 @@ export default function EliminateGame() {
     // 绘制方块
     for (let i = 0; i < CONFIG.GRID_SIZE; i++) {
       for (let j = 0; j < CONFIG.GRID_SIZE; j++) {
-        const colorIndex = board[i]?.[j]
-        if (colorIndex === undefined || colorIndex === -1) continue
+        let renderColorIndex = board[i]?.[j]
+        let isEliminating = false
+        let elimState = null
+
+        // 检查是否是正在消除的方块（棋盘上是-1或undefined但动画中存在）
+        if ((renderColorIndex === undefined || renderColorIndex === -1) && animStateRef.current.eliminating.length > 0) {
+          const elim = animStateRef.current.eliminating.find(e => e.row === i && e.col === j)
+          if (elim) {
+            renderColorIndex = elim.color
+            isEliminating = true
+            elimState = elim
+          }
+        }
+
+        // 跳过空格子（除非正在消除）
+        if ((renderColorIndex === undefined || renderColorIndex === -1) && !isEliminating) continue
 
         const isSelected = selectedCell && selectedCell.row === i && selectedCell.col === j
         const isHint = hintCellsRef.current &&
           ((hintCellsRef.current.from.row === i && hintCellsRef.current.from.col === j) ||
            (hintCellsRef.current.to.row === i && hintCellsRef.current.to.col === j))
 
-        const elimState = animStateRef.current.eliminating.find(e => e.row === i && e.col === j)
-        const isEliminating = !!elimState
+        // 检查消除动画（棋盘上还有值的情况）
+        if (!isEliminating) {
+          elimState = animStateRef.current.eliminating.find(e => e.row === i && e.col === j)
+          isEliminating = !!elimState
+        }
 
         // 交换动画偏移
         let swapOffset = null
@@ -434,7 +451,7 @@ export default function EliminateGame() {
           }
         }
 
-        drawBlock(ctx, colorIndex, j * cellSize, i * cellSize, cellSize, isSelected, isHint,
+        drawBlock(ctx, renderColorIndex, j * cellSize, i * cellSize, cellSize, isSelected, isHint,
           isEliminating ? elimState?.progress : animStateRef.current.hintProgress, isEliminating, swapOffset, dropOffset, fallFromTopOffset)
       }
     }
@@ -605,8 +622,14 @@ export default function EliminateGame() {
       const matches = getMatches(boardRef.current)
       if (matches.length === 0) break
 
-      // 记录消除状态用于动画
-      animStateRef.current.eliminating = matches.map(m => ({ ...m, progress: 0 }))
+      // 第一步：播放消除动画
+      // 记录消除状态用于动画 - 使用独立的颜色信息记录
+      const eliminatingBlocks = matches.map(m => ({
+        ...m,
+        color: boardRef.current[m.row][m.col],
+        progress: 0
+      }))
+      animStateRef.current.eliminating = eliminatingBlocks
 
       // 计算得分
       const points = calculateScore(matches, level)
@@ -628,39 +651,47 @@ export default function EliminateGame() {
         return prev
       })
 
-      // 等待消除动画
+      // 等待消除动画完成
       await new Promise(r => setTimeout(r, CONFIG.ANIMATION_SPEED))
 
-      // 标记消除
+      // 第二步：消除动画完成后，再修改棋盘数据
+      animStateRef.current.eliminating = []
       matches.forEach(({ row, col }) => {
         boardRef.current[row][col] = -1
       })
+      render()
 
       // ===== 两阶段下落 =====
 
       // 调用 applyGravity 获取下落关系和新方块信息
-      // 注意：新方块暂时不放入棋盘（位置为-1），等动画完成后再填充
       const { board: newBoard, dropMoves, newBlocks } = applyGravity(boardRef.current)
       boardRef.current = newBoard
 
       // 第一阶段：现有方块下落动画
       if (dropMoves.length > 0) {
         const dropAnimations = dropMoves.map(move => ({
+          fromRow: move.fromRow,
+          toRow: move.toRow,
           row: move.toRow,
           col: move.col,
           offset: 0
         }))
 
-        animStateRef.current.dropping = dropAnimations
-        const dropDuration = CONFIG.DROP_ANIMATION_DURATION
+        // 计算最大下落距离，用于确定动画时间
+        // 基础时间 + 每行下落需要的时间 = 恒定速度
+        const maxDropDistance = Math.max(...dropMoves.map(m => m.toRow - m.fromRow))
+        const dropDuration = 150 + maxDropDistance * 80 // 基础150ms + 每格80ms
         const dropFrames = 15
+
+        animStateRef.current.dropping = dropAnimations
 
         for (let f = 1; f <= dropFrames; f++) {
           const progress = f / dropFrames
           const eased = 1 - Math.pow(1 - progress, 2) // easeOutQuad
 
           dropAnimations.forEach(d => {
-            d.offset = (1 - eased) * -1
+            const dropDistance = d.toRow - d.fromRow
+            d.offset = (1 - eased) * -1 * dropDistance
           })
           render()
           await new Promise(r => setTimeout(r, dropDuration / dropFrames))
