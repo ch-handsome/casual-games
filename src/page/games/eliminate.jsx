@@ -5,7 +5,9 @@ const CONFIG = {
   GRID_SIZE: 10,        // 网格大小，可改为 8/10/12/15
   CELL_SIZE: 40,        // 格子大小(px)，会自动适配屏幕
   COLORS: 6,            // 颜色数量 4/5/6/8
-  ANIMATION_SPEED: 200  // 动画速度(ms)
+  ANIMATION_SPEED: 200, // 消除动画速度(ms)
+  DROP_ANIMATION_DURATION: 250,  // 现有方块下落时间(ms)
+  FALL_FROM_TOP_DURATION: 300    // 新方块从顶部滑入时间(ms)
 }
 
 const STORAGE_KEY = 'eliminate-best-score'
@@ -106,26 +108,45 @@ function calculateScore(matches, currentLevel) {
   return 10 * currentLevel
 }
 
-// 重力下落
+// 重力下落 - 返回更新后的棋盘和动画信息
 function applyGravity(board) {
   const newBoard = board.map(row => [...row])
+  const dropMoves = []
+  const newBlocks = []
 
-  for (let j = 0; j < CONFIG.GRID_SIZE; j++) {
-    const column = []
-    for (let i = 0; i < CONFIG.GRID_SIZE; i++) {
-      if (newBoard[i]?.[j] !== -1 && newBoard[i]?.[j] !== undefined) {
-        column.push(newBoard[i][j])
+  for (let col = 0; col < CONFIG.GRID_SIZE; col++) {
+    let emptyCount = 0
+
+    // 从下往上扫描
+    for (let row = CONFIG.GRID_SIZE - 1; row >= 0; row--) {
+      if (newBoard[row][col] === -1) {
+        emptyCount++
+      } else if (emptyCount > 0) {
+        // 现有方块需要下落
+        dropMoves.push({
+          fromRow: row,
+          toRow: row + emptyCount,
+          col: col
+        })
+        // 更新棋盘数据
+        newBoard[row + emptyCount][col] = newBoard[row][col]
+        newBoard[row][col] = -1
       }
     }
-    while (column.length < CONFIG.GRID_SIZE) {
-      column.unshift(Math.floor(Math.random() * CONFIG.COLORS))
-    }
-    for (let i = 0; i < CONFIG.GRID_SIZE; i++) {
-      newBoard[i][j] = column[i]
+
+    // 顶部空缺需要生成新方块
+    for (let i = 0; i < emptyCount; i++) {
+      const color = Math.floor(Math.random() * CONFIG.COLORS)
+      newBlocks.push({
+        row: i,
+        col: col,
+        color: color
+      })
+      newBoard[i][col] = color
     }
   }
 
-  return newBoard
+  return { board: newBoard, dropMoves, newBlocks }
 }
 
 // 检测有效移动
@@ -207,7 +228,7 @@ function drawRoundedRect(ctx, x, y, width, height, radius) {
 }
 
 // 绘制方块
-function drawBlock(ctx, colorIndex, x, y, size, isSelected, isHint, animProgress, isEliminating, swapOffset, dropOffset) {
+function drawBlock(ctx, colorIndex, x, y, size, isSelected, isHint, animProgress, isEliminating, swapOffset, dropOffset, fallFromTopOffset) {
   const color = BLOCK_COLORS[colorIndex]
   const padding = 3
   const radius = 8
@@ -219,9 +240,14 @@ function drawBlock(ctx, colorIndex, x, y, size, isSelected, isHint, animProgress
     ctx.translate(swapOffset.x, swapOffset.y)
   }
 
-  // 下落动画
+  // 下落动画（现有方块）
   if (dropOffset) {
     ctx.translate(0, dropOffset * size)
+  }
+
+  // 从顶部滑入动画（新方块）
+  if (fallFromTopOffset !== null && fallFromTopOffset !== undefined) {
+    ctx.translate(0, fallFromTopOffset * size)
   }
 
   // 消除动画：缩放+淡出
@@ -287,7 +313,13 @@ export default function EliminateGame() {
   const boardRef = useRef(initBoard())
   const cellSizeRef = useRef(CONFIG.CELL_SIZE)
   const hintCellsRef = useRef(null)
-  const animStateRef = useRef({ eliminating: [], dropY: [], hintProgress: 0, swapping: null })
+  const animStateRef = useRef({
+    eliminating: [],
+    dropping: [],
+    fallingFromTop: [],
+    hintProgress: 0,
+    swapping: null
+  })
 
   // 初始化
   useEffect(() => {
@@ -393,8 +425,17 @@ export default function EliminateGame() {
           }
         }
 
+        // 从顶部滑入动画偏移
+        let fallFromTopOffset = null
+        if (animStateRef.current.fallingFromTop) {
+          const fall = animStateRef.current.fallingFromTop.find(f => f.row === i && f.col === j)
+          if (fall) {
+            fallFromTopOffset = fall.offset
+          }
+        }
+
         drawBlock(ctx, colorIndex, j * cellSize, i * cellSize, cellSize, isSelected, isHint,
-          isEliminating ? elimState?.progress : animStateRef.current.hintProgress, isEliminating, swapOffset, dropOffset)
+          isEliminating ? elimState?.progress : animStateRef.current.hintProgress, isEliminating, swapOffset, dropOffset, fallFromTopOffset)
       }
     }
   }, [selectedCell])
@@ -595,29 +636,23 @@ export default function EliminateGame() {
         boardRef.current[row][col] = -1
       })
 
-      // 计算下落动画
-      const oldBoard = boardRef.current.map(row => [...row])
-      boardRef.current = applyGravity(boardRef.current)
+      // ===== 两阶段下落 =====
 
-      // 计算每个格子的下落距离
-      const dropAnimations = []
-      for (let j = 0; j < CONFIG.GRID_SIZE; j++) {
-        let emptyCount = 0
-        for (let i = CONFIG.GRID_SIZE - 1; i >= 0; i--) {
-          if (oldBoard[i][j] === -1) {
-            emptyCount++
-          } else if (emptyCount > 0) {
-            const newRow = i + emptyCount
-            dropAnimations.push({ row: newRow, col: j, offset: 0 })
-          }
-        }
-      }
+      // 调用 applyGravity 获取下落关系和新方块信息
+      const { board: newBoard, dropMoves, newBlocks } = applyGravity(boardRef.current)
+      boardRef.current = newBoard
 
-      // 执行下落动画
-      if (dropAnimations.length > 0) {
+      // 第一阶段：现有方块下落动画
+      if (dropMoves.length > 0) {
+        const dropAnimations = dropMoves.map(move => ({
+          row: move.toRow,
+          col: move.col,
+          offset: 0
+        }))
+
         animStateRef.current.dropping = dropAnimations
-        const dropDuration = 200
-        const dropFrames = 12
+        const dropDuration = CONFIG.DROP_ANIMATION_DURATION
+        const dropFrames = 15
 
         for (let f = 1; f <= dropFrames; f++) {
           const progress = f / dropFrames
@@ -631,6 +666,32 @@ export default function EliminateGame() {
         }
 
         animStateRef.current.dropping = null
+      }
+
+      // 第二阶段：新方块从顶部滑入动画
+      if (newBlocks.length > 0) {
+        const fallAnimations = newBlocks.map(block => ({
+          row: block.row,
+          col: block.col,
+          offset: -1 // 初始位置在 y = -1
+        }))
+
+        animStateRef.current.fallingFromTop = fallAnimations
+        const fallDuration = CONFIG.FALL_FROM_TOP_DURATION
+        const fallFrames = 18
+
+        for (let f = 1; f <= fallFrames; f++) {
+          const progress = f / fallFrames
+          const eased = progress * progress // easeInQuad
+
+          fallAnimations.forEach(fa => {
+            fa.offset = -1 + eased // 从 -1 过渡到 0
+          })
+          render()
+          await new Promise(r => setTimeout(r, fallDuration / fallFrames))
+        }
+
+        animStateRef.current.fallingFromTop = null
       }
 
       render()
@@ -671,7 +732,13 @@ export default function EliminateGame() {
     setMessage('')
     setIsAnimating(false)
     hintCellsRef.current = null
-    animStateRef.current = { eliminating: [], dropY: [], hintProgress: 0, swapping: null, dropping: null }
+    animStateRef.current = {
+      eliminating: [],
+      dropping: [],
+      fallingFromTop: [],
+      hintProgress: 0,
+      swapping: null
+    }
 
     // 检测初始是否有有效移动
     setTimeout(() => {
