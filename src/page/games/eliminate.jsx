@@ -6,8 +6,8 @@ const CONFIG = {
   CELL_SIZE: 40,        // 格子大小(px)，会自动适配屏幕
   COLORS: 6,            // 颜色数量 4/5/6/8
   ANIMATION_SPEED: 200, // 消除动画速度(ms)
-  DROP_ANIMATION_DURATION: 250,  // 现有方块下落时间(ms)
-  FALL_FROM_TOP_DURATION: 300    // 新方块从顶部滑入时间(ms)
+  DROP_ANIMATION_DURATION: 150,  // 现有方块下落时间(ms)
+  FALL_FROM_TOP_DURATION: 150    // 新方块从顶部滑入时间(ms)
 }
 
 const STORAGE_KEY = 'eliminate-best-score'
@@ -678,9 +678,9 @@ export default function EliminateGame() {
         }))
 
         // 计算最大下落距离，用于确定动画时间
-        // 基础时间 + 每行下落需要的时间 = 恒定速度
+        // DROP_ANIMATION_DURATION 是下落1格的时间，下落n格需要 n * DROP_ANIMATION_DURATION
         const maxDropDistance = Math.max(...dropMoves.map(m => m.toRow - m.fromRow))
-        const dropDuration = 150 + maxDropDistance * 80 // 基础150ms + 每格80ms
+        const dropDuration = maxDropDistance * CONFIG.DROP_ANIMATION_DURATION
         const dropFrames = 15
 
         animStateRef.current.dropping = dropAnimations
@@ -708,13 +708,18 @@ export default function EliminateGame() {
         })
 
         const fallAnimations = newBlocks.map(block => ({
+          fromRow: -1,
+          toRow: block.row,
           row: block.row,
           col: block.col,
           offset: -1 // 初始位置在 y = -1
         }))
 
         animStateRef.current.fallingFromTop = fallAnimations
-        const fallDuration = CONFIG.FALL_FROM_TOP_DURATION
+
+        // 新方块下落距离 = 目标行 + 1（从-1位置开始）
+        const maxFallDistance = Math.max(...newBlocks.map(b => b.row + 1))
+        const fallDuration = maxFallDistance * CONFIG.FALL_FROM_TOP_DURATION
         const fallFrames = 18
 
         for (let f = 1; f <= fallFrames; f++) {
@@ -722,7 +727,8 @@ export default function EliminateGame() {
           const eased = progress * progress // easeInQuad
 
           fallAnimations.forEach(fa => {
-            fa.offset = -1 + eased // 从 -1 过渡到 0
+            const fallDistance = fa.toRow + 1 // 从 -1 到目标行
+            fa.offset = -fallDistance + eased * fallDistance
           })
           render()
           await new Promise(r => setTimeout(r, fallDuration / fallFrames))

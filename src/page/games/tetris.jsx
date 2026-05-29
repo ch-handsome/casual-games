@@ -433,9 +433,9 @@ export default function Tetris() {
   }
 
   return (
-    <div className="h-full flex items-center justify-center w-full overflow-hidden">
+    <div className="h-full flex items-center justify-center w-full">
       {/* 3D立体容器 */}
-      <div className="relative flex flex-col items-center gap-3 overflow-hidden bg-gradient-to-b from-[#3d3d5c] to-[#2d2d4a] p-5 rounded-xl shadow-[inset_0_2px_0_rgba(255,255,255,0.1),inset_0_-2px_0_rgba(0,0,0,0.3),0_10px_0_#1e1e36,0_15px_30px_rgba(0,0,0,0.4)]">
+      <div className="relative flex flex-col items-center gap-3 bg-gradient-to-b from-[#3d3d5c] to-[#2d2d4a] p-5 rounded-xl shadow-[inset_0_2px_0_rgba(255,255,255,0.1),inset_0_-2px_0_rgba(0,0,0,0.3),0_10px_0_#1e1e36,0_15px_30px_rgba(0,0,0,0.4)]">
         {/* 容器内阴影层 */}
         <div className="absolute inset-0 rounded-xl shadow-[inset_0_0_30px_rgba(0,0,0,0.2)] pointer-events-none" />
 

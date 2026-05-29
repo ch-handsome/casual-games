@@ -7,7 +7,7 @@ export default function Layout() {
   const isActive = (path) => location.pathname === `/${path}`;
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full overflow-auto">
       <div className="flex flex-wrap justify-center gap-5 py-[30px] px-5 max-sm:gap-3">
         {config.map((game) => (
           <NavLink
@@ -50,9 +50,13 @@ export default function Layout() {
               <div className="absolute top-2 left-1/2 -translate-x-1/2 w-8 h-1 bg-[#00ff88] rounded-full shadow-[0_0_10px_#00ff88]" />
             )}
 
-            <span className="text-[40px] max-sm:text-[32px] relative z-10 drop-shadow-lg">{game.icon}</span>
+            <img
+              src={game.icon}
+              alt={game.name}
+              className="w-10 h-10 object-contain relative z-10 mt-1"
+            />
             <span className={`
-              text-white text-sm max-sm:text-xs font-medium relative z-10 transition-all duration-200
+              text-white text-sm max-sm:text-xs font-medium relative z-10 transition-all duration-200 mt-1
               ${isActive(game.path)
                 ? "text-[#00ff88] drop-shadow-[0_0_8px_rgba(0,255,136,0.5)]"
                 : "drop-shadow-md"}
@@ -62,7 +66,7 @@ export default function Layout() {
           </NavLink>
         ))}
       </div>
-      <div className="flex-1 flex justify-center items-center overflow-auto p-5 pt-0">
+      <div className="flex-1 flex justify-center items-center  p-5 pt-0">
         <Outlet />
       </div>
     </div>
