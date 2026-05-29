@@ -6,8 +6,8 @@ const CONFIG = {
   CELL_SIZE: 40,        // 格子大小(px)，会自动适配屏幕
   COLORS: 6,            // 颜色数量 4/5/6/8
   ANIMATION_SPEED: 200, // 消除动画速度(ms)
-  DROP_ANIMATION_DURATION: 150,  // 现有方块下落时间(ms)
-  FALL_FROM_TOP_DURATION: 150    // 新方块从顶部滑入时间(ms)
+  DROP_ANIMATION_DURATION: 100,  // 现有方块下落时间(ms)
+  FALL_FROM_TOP_DURATION: 100    // 新方块从顶部滑入时间(ms)
 }
 
 const STORAGE_KEY = 'eliminate-best-score'
@@ -262,10 +262,12 @@ function drawBlock(ctx, colorIndex, x, y, size, isSelected, isHint, animProgress
     ctx.globalAlpha = alpha
   }
 
-  // 选中效果
+  // 选中效果 - 圆角边框
   if (isSelected) {
-    ctx.shadowColor = '#ffd700'
-    ctx.shadowBlur = 15
+    ctx.strokeStyle = '#ffffff'
+    ctx.lineWidth = 4
+    drawRoundedRect(ctx, x + 2, y + 2, size - 4, size - 4, 8)
+    ctx.stroke()
   }
 
   // 提示闪烁效果
@@ -286,8 +288,8 @@ function drawBlock(ctx, colorIndex, x, y, size, isSelected, isHint, animProgress
   ctx.fill()
 
   // 绘制边框
-  ctx.strokeStyle = isSelected ? '#ffd700' : color.stroke
-  ctx.lineWidth = isSelected ? 3 : 2
+  ctx.strokeStyle = color.stroke
+  ctx.lineWidth = 2
   ctx.stroke()
 
   // 高光效果
@@ -371,7 +373,7 @@ export default function EliminateGame() {
     return () => window.removeEventListener('resize', handleResize)
   }, [])
 
-  // 渲染画布
+  // 渲染画布（优化版本：减少不必要的重绘）
   const render = useCallback(() => {
     const canvas = canvasRef.current
     if (!canvas) return
@@ -457,22 +459,32 @@ export default function EliminateGame() {
     }
   }, [selectedCell])
 
-  // 动画循环
+  // 动画循环（优化版本）
   useEffect(() => {
     let animationId
+    let lastTime = performance.now()
 
-    const animate = () => {
-      if (hintCellsRef.current !== null) {
-        animStateRef.current.hintProgress = (animStateRef.current.hintProgress + 0.02) % 1
+    const animate = (currentTime) => {
+      const deltaTime = currentTime - lastTime
+
+      // 限制更新频率，避免过度渲染
+      if (deltaTime >= 16) { // 约60fps
+        lastTime = currentTime
+
+        // 更新提示动画
+        if (hintCellsRef.current !== null) {
+          animStateRef.current.hintProgress = (animStateRef.current.hintProgress + 0.02) % 1
+        }
+
+        // 更新消除动画（缩小效果）
+        animStateRef.current.eliminating = animStateRef.current.eliminating.filter(e => {
+          e.progress += 0.04
+          return e.progress < 1
+        })
+
+        render()
       }
 
-      // 更新消除动画（缩小效果）
-      animStateRef.current.eliminating = animStateRef.current.eliminating.filter(e => {
-        e.progress += 0.04  // 缩放动画速度
-        return e.progress < 1
-      })
-
-      render()
       animationId = requestAnimationFrame(animate)
     }
 
