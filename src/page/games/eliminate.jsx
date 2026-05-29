@@ -7,7 +7,8 @@ const CONFIG = {
   COLORS: 6,            // 颜色数量 4/5/6/8
   ANIMATION_SPEED: 200, // 消除动画速度(ms)
   DROP_ANIMATION_DURATION: 100,  // 现有方块下落时间(ms)
-  FALL_FROM_TOP_DURATION: 100    // 新方块从顶部滑入时间(ms)
+  FALL_FROM_TOP_DURATION: 100,   // 新方块从顶部滑入时间(ms)
+  COUNTDOWN_MS: 10 * 60 * 1000     // 倒计时时间(毫秒)
 }
 
 const STORAGE_KEY = 'eliminate-best-score'
@@ -100,12 +101,12 @@ function getMatches(board) {
 }
 
 // 计算消除得分
-function calculateScore(matches, currentLevel) {
+function calculateScore(matches) {
   const count = matches.length
-  if (count >= 6) return 50 * currentLevel
-  if (count >= 5) return 35 * currentLevel
-  if (count >= 4) return 20 * currentLevel
-  return 10 * currentLevel
+  if (count >= 6) return 50
+  if (count >= 5) return 35
+  if (count >= 4) return 20
+  return 10
 }
 
 // 重力下落 - 返回更新后的棋盘和动画信息
@@ -307,10 +308,12 @@ export default function EliminateGame() {
   const containerRef = useRef(null)
   const [score, setScore] = useState(0)
   const [bestScore, setBestScore] = useState(0)
-  const [level, setLevel] = useState(1)
   const [isAnimating, setIsAnimating] = useState(false)
   const [selectedCell, setSelectedCell] = useState(null)
   const [message, setMessage] = useState('')
+  const [timeLeft, setTimeLeft] = useState(CONFIG.COUNTDOWN_MS)
+  const [showGameOver, setShowGameOver] = useState(false)
+  const [finalScore, setFinalScore] = useState(0)
 
   const boardRef = useRef(initBoard())
   const cellSizeRef = useRef(CONFIG.CELL_SIZE)
@@ -373,6 +376,25 @@ export default function EliminateGame() {
     return () => window.removeEventListener('resize', handleResize)
   }, [])
 
+  // 倒计时
+  useEffect(() => {
+    if (showGameOver || isAnimating) return
+
+    const timer = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 100) {
+          setShowGameOver(true)
+          setFinalScore(score)
+          clearInterval(timer)
+          return 0
+        }
+        return prev - 100
+      })
+    }, 100)
+
+    return () => clearInterval(timer)
+  }, [showGameOver, isAnimating, score])
+
   // 渲染画布（优化版本：减少不必要的重绘）
   const render = useCallback(() => {
     const canvas = canvasRef.current
@@ -413,7 +435,11 @@ export default function EliminateGame() {
         // 跳过空格子（除非正在消除）
         if ((renderColorIndex === undefined || renderColorIndex === -1) && !isEliminating) continue
 
-        const isSelected = selectedCell && selectedCell.row === i && selectedCell.col === j
+        const isSelected = selectedCell &&
+          selectedCell.row === i &&
+          selectedCell.col === j &&
+          board[i]?.[j] !== -1 &&
+          board[i]?.[j] !== undefined
         const isHint = hintCellsRef.current &&
           ((hintCellsRef.current.from.row === i && hintCellsRef.current.from.col === j) ||
            (hintCellsRef.current.to.row === i && hintCellsRef.current.to.col === j))
@@ -644,13 +670,9 @@ export default function EliminateGame() {
       animStateRef.current.eliminating = eliminatingBlocks
 
       // 计算得分
-      const points = calculateScore(matches, level)
+      const points = calculateScore(matches)
       setScore(prev => {
         const newScore = prev + points
-        const newLevel = Math.floor(newScore / 200) + 1
-        if (newLevel !== level) {
-          setLevel(newLevel)
-        }
         return newScore
       })
 
@@ -782,10 +804,12 @@ export default function EliminateGame() {
   const newGame = useCallback(() => {
     boardRef.current = initBoard()
     setScore(0)
-    setLevel(1)
     setSelectedCell(null)
     setMessage('')
     setIsAnimating(false)
+    setTimeLeft(CONFIG.COUNTDOWN_MS)
+    setShowGameOver(false)
+    setFinalScore(0)
     hintCellsRef.current = null
     animStateRef.current = {
       eliminating: [],
@@ -829,15 +853,17 @@ export default function EliminateGame() {
           <div className="flex items-center gap-3 flex-wrap">
             <div className="relative bg-gradient-to-b from-[#4a4a6a] to-[#3a3a5a] rounded-lg px-4 py-2 text-center min-w-[70px] shadow-[inset_0_-2px_0_rgba(0,0,0,0.3),inset_0_2px_0_rgba(255,255,255,0.1),0_3px_0_#252540]">
               <div className="text-[rgba(255,255,255,0.7)] text-xs">分数</div>
-              <div className="text-white text-lg font-bold">{score}</div>
+              <div className="text-white text-base font-bold">{score}</div>
             </div>
             <div className="relative bg-gradient-to-b from-[#4a4a6a] to-[#3a3a5a] rounded-lg px-4 py-2 text-center min-w-[70px] shadow-[inset_0_-2px_0_rgba(0,0,0,0.3),inset_0_2px_0_rgba(255,255,255,0.1),0_3px_0_#252540]">
               <div className="text-[rgba(255,255,255,0.7)] text-xs">最高</div>
-              <div className="text-white text-lg font-bold">{bestScore}</div>
+              <div className="text-white text-base font-bold">{bestScore}</div>
             </div>
-            <div className="relative bg-gradient-to-b from-[#5a4a1a] to-[#4a3a0a] rounded-lg px-4 py-2 text-center min-w-[70px] shadow-[inset_0_-2px_0_rgba(0,0,0,0.3),inset_0_2px_0_rgba(255,255,255,0.1),0_3px_0_#302a05]">
-              <div className="text-[rgba(255,215,0,0.9)] text-xs">等级</div>
-              <div className="text-[#ffd700] text-lg font-bold">{level}</div>
+            <div className="relative bg-gradient-to-b from-[#4a4a6a] to-[#3a3a5a] rounded-lg px-4 py-2 text-center min-w-[70px] shadow-[inset_0_-2px_0_rgba(0,0,0,0.3),inset_0_2px_0_rgba(255,255,255,0.1),0_3px_0_#252540] w-20">
+              <div className="text-[rgba(255,255,255,0.7)] text-xs">时间</div>
+              <div className="text-white text-base font-bold">
+                {Math.floor(timeLeft / 60000)}:{String(Math.floor((timeLeft % 60000) / 1000)).padStart(2, '0')}
+              </div>
             </div>
           </div>
 
@@ -873,6 +899,23 @@ export default function EliminateGame() {
             className="cursor-pointer touch-none mx-auto block"
             style={{ borderRadius: '8px' }}
           />
+
+          {showGameOver && (
+            <div className="absolute inset-0 bg-black/85 rounded-xl flex flex-col items-center justify-center gap-5 backdrop-blur-sm">
+              <div className="text-[#e94560] text-5xl font-bold">
+                游戏结束
+              </div>
+              <div className="text-white text-2xl">
+                得分: <span className="text-[#00ff88] text-4xl">{finalScore}</span>
+              </div>
+              <button
+                onClick={newGame}
+                className="px-12 py-3.5 text-lg bg-gradient-to-b from-[#00ff88] to-[#00cc6a] text-white rounded-xl font-bold cursor-pointer transition-all duration-100 border-t border-[#4dffa0] shadow-[0_4px_0_#009950,0_5px_10px_rgba(0,0,0,0.3)] hover:shadow-[0_4px_0_#009950,0_6px_15px_rgba(0,255,136,0.4)] active:shadow-[0_2px_0_#009950,0_2px_5px_rgba(0,0,0,0.3)] active:translate-y-1 uppercase tracking-wider"
+              >
+                再玩一次
+              </button>
+            </div>
+          )}
         </div>
 
         {/* 消息提示 */}

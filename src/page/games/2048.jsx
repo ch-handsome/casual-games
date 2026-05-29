@@ -335,11 +335,11 @@ export default function Game2048() {
             <div className="flex gap-2">
               <div className="relative bg-gradient-to-b from-[#4a4a6a] to-[#3a3a5a] rounded-md px-4 py-2 text-center min-w-[80px] shadow-[inset_0_-2px_0_rgba(0,0,0,0.3),inset_0_2px_0_rgba(255,255,255,0.1),0_3px_0_#252540]">
                 <div className="text-[#eee4da] text-xs uppercase tracking-wider">分数</div>
-                <div className="text-white text-xl font-bold">{score}</div>
+                <div className="text-white text-base font-bold">{score}</div>
               </div>
               <div className="relative bg-gradient-to-b from-[#4a4a6a] to-[#3a3a5a] rounded-md px-4 py-2 text-center min-w-[80px] shadow-[inset_0_-2px_0_rgba(0,0,0,0.3),inset_0_2px_0_rgba(255,255,255,0.1),0_3px_0_#252540]">
                 <div className="text-[#eee4da] text-xs uppercase tracking-wider">最高</div>
-                <div className="text-white text-xl font-bold">{bestScore}</div>
+                <div className="text-white text-base font-bold">{bestScore}</div>
               </div>
             </div>
           </div>
