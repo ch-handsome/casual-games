@@ -550,40 +550,6 @@ export default function Tetris() {
           </div>
         </div>
 
-        {/* Touch Controls */}
-        <div className="flex gap-2 justify-center flex-wrap md:hidden">
-          <button
-            onTouchStart={(e) => { e.preventDefault(); movePiece(-1, 0) }}
-            className="w-14 h-14 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 text-white text-xl font-bold active:bg-white/30"
-          >
-            ◀
-          </button>
-          <button
-            onTouchStart={(e) => { e.preventDefault(); movePiece(1, 0) }}
-            className="w-14 h-14 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 text-white text-xl font-bold active:bg-white/30"
-          >
-            ▶
-          </button>
-          <button
-            onTouchStart={(e) => { e.preventDefault(); rotatePiece() }}
-            className="w-14 h-14 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 text-white text-xl font-bold active:bg-white/30"
-          >
-            ↻
-          </button>
-          <button
-            onTouchStart={(e) => { e.preventDefault(); movePiece(0, 1) }}
-            className="w-14 h-14 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 text-white text-xl font-bold active:bg-white/30"
-          >
-            ▼
-          </button>
-          <button
-            onTouchStart={(e) => { e.preventDefault(); hardDrop() }}
-            className="w-14 h-14 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl border border-white/20 text-white text-lg font-bold active:opacity-80"
-          >
-            ⬇⬇
-          </button>
-        </div>
-
         {/* Desktop Controls Hint */}
          <div className="text-[#666] text-sm text-center">
           <span className="text-[#00ffff]">左右</span> 控制移动 | 

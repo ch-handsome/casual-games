@@ -25,7 +25,7 @@ export default function Layout() {
       </div>
 
       {/* 游戏内容区域 */}
-      <div className="flex-1 flex justify-center items-start p-2 pt-0">
+      <div className="flex-1 flex justify-center items-center p-2 pt-0">
         <Outlet />
       </div>
     </div>

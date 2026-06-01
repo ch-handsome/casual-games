@@ -13,7 +13,7 @@ export default function Home() {
       >
         CASUAL GAMES
       </h1>
-      <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-6 max-w-4xl mx-auto w-full px-2">
+      <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6 max-w-4xl mx-auto w-full px-2">
         {config.map((game) => (
           <Link
             key={game.path}

@@ -5,10 +5,12 @@ import GameSnake from "@/page/games/snake";
 import Game2048 from "@/page/games/2048";
 import GameTetris from "@/page/games/tetris";
 import GameEliminate from "@/page/games/eliminate";
+import GameThunderbolt from "@/page/games/thunderbolt";
 import icon2048 from "@/assets/icon/2048.png";
 import iconEliminate from "@/assets/icon/eliminate.png";
 import iconSnake from "@/assets/icon/snake.png";
 import iconTetris from "@/assets/icon/tetris.png";
+import iconThunderbolt from "@/assets/icon/thunderbolt.png";
 
 export const config = [
   {
@@ -34,6 +36,12 @@ export const config = [
     name: "俄罗斯方块",
     icon: iconTetris,
     element: <GameTetris />,
+  },
+  {
+    path: "thunderbolt",
+    name: "雷电",
+    icon: iconThunderbolt,
+    element: <GameThunderbolt />,
   },
 ];
 
