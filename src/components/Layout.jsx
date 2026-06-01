@@ -1,5 +1,5 @@
 import { NavLink, useLocation, Outlet } from "react-router-dom";
-import { config } from "../router/config";
+import { config } from "../router";
 
 export default function Layout() {
   const location = useLocation();
