@@ -1,13 +1,14 @@
-import { Navigate, createHashRouter } from "react-router-dom";
-import Layout from "../components/Layout";
-import GameSnake from "../page/games/snake";
-import Game2048 from "../page/games/2048";
-import GameTetris from "../page/games/tetris";
-import GameEliminate from "../page/games/eliminate";
-import icon2048 from "../assets/icon/2048.png";
-import iconEliminate from "../assets/icon/eliminate.png";
-import iconSnake from "../assets/icon/snake.png";
-import iconTetris from "../assets/icon/tetris.png";
+import { createHashRouter } from "react-router-dom";
+import Layout from "@/components/Layout";
+import Home from "@/page/home";
+import GameSnake from "@/page/games/snake";
+import Game2048 from "@/page/games/2048";
+import GameTetris from "@/page/games/tetris";
+import GameEliminate from "@/page/games/eliminate";
+import icon2048 from "@/assets/icon/2048.png";
+import iconEliminate from "@/assets/icon/eliminate.png";
+import iconSnake from "@/assets/icon/snake.png";
+import iconTetris from "@/assets/icon/tetris.png";
 
 export const config = [
   {
@@ -39,9 +40,12 @@ export const config = [
 export const routes = [
   {
     path: "/",
-    element: <Layout />,
+    element: <Home />,
+  },
+  {
+    path: "/game",
+    element: <Layout/>,
     children: [
-      { index: true, element: <Navigate to="/2048" replace /> },
       ...config.map((game) => ({ ...game })),
     ],
   },
