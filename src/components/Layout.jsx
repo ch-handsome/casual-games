@@ -1,4 +1,5 @@
 import { useLocation, Outlet, Link } from "react-router-dom";
+import { ChevronLeft } from 'lucide-react'
 import { config } from "@/router";
 
 export default function Layout() {
@@ -14,20 +15,8 @@ export default function Layout() {
           to="/"
           className="flex items-center gap-1 text-white hover:text-[#00ff88] transition-colors"
         >
-          <svg
-            className="w-4 h-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M15 19l-7-7 7-7"
-            />
-          </svg>
-          <span className="text-xs font-medium">首页</span>
+          <ChevronLeft/>
+          <span className="text-sm font-medium">首页</span>
         </Link>
         <span className="text-white text-sm font-medium">
           {config.find((g) => isActive(g.path))?.name || "游戏"}
