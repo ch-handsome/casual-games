@@ -13,6 +13,14 @@ const PLAYER_SIZE = 20
 const BULLET_RADIUS = 4
 const SCORE_PER_LEVEL = 2000
 const MAX_LEVEL = 10
+const MAX_WEAPON_LEVEL = 5
+const BULLET_COLORS = {
+  1: '#ffff00',
+  2: '#00ff88',
+  3: '#00ffff',
+  4: '#ff8800',
+  5: '#ff00ff',
+}
 
 // 等级难度参数配置
 const LEVEL_CONFIG = {
@@ -38,7 +46,7 @@ const ENEMY_TYPES = {
   elite: { color: '#22d3d3', hp: 8, score: 100, speed: 1.2, width: 60, height: 60 },
 }
 const POWERUPS = {
-  weapon: { color: '#e85d75', duration: 0 },
+  weapon: { color: '#ff3333', duration: 0 },
   shield: { color: '#4e9ef0', duration: 10000 },
   health: { color: '#50c878', duration: 0 },
   speed: { color: '#ffe066', duration: 8000 },
@@ -54,6 +62,8 @@ export default function Thunderbolt() {
   const [fireRate, setFireRate] = useState('正常')
   const [gameLevel, setGameLevel] = useState(1)
   const [showLevelUp, setShowLevelUp] = useState(false)
+  const [showWeaponUp, setShowWeaponUp] = useState(false)
+  const [showWeaponDown, setShowWeaponDown] = useState(false)
 
   // 游戏结束显示覆盖层
 
@@ -150,6 +160,8 @@ export default function Thunderbolt() {
     setIsGameOver(false)
     setFireRate('正常')
     setShowLevelUp(false)
+    setShowWeaponUp(false)
+    setShowWeaponDown(false)
     initStars()
 
     if (gameLoopRef.current) cancelAnimationFrame(gameLoopRef.current)
@@ -163,16 +175,53 @@ export default function Thunderbolt() {
 
     state.lastFireTime = currentTime
     const player = state.player
+    const level = state.weaponLevel
+    const cx = player.x
+    const cy = player.y - 15
 
-    if (state.weaponLevel === 1) {
-      state.bullets.push({ x: player.x, y: player.y - 15, vy: -10, trail: [] })
-    } else if (state.weaponLevel === 2) {
-      state.bullets.push({ x: player.x - 10, y: player.y - 15, vy: -10, trail: [] })
-      state.bullets.push({ x: player.x + 10, y: player.y - 15, vy: -10, trail: [] })
-    } else {
-      state.bullets.push({ x: player.x - 12, y: player.y - 15, vy: -10, vx: -1, trail: [] })
-      state.bullets.push({ x: player.x, y: player.y - 15, vy: -10, trail: [] })
-      state.bullets.push({ x: player.x + 12, y: player.y - 15, vy: -10, vx: 1, trail: [] })
+    const makeBullet = (x, y, vx = 0, vy = -10, extra = {}) => ({
+      x, y, vy, vx, trail: [], level, ...extra,
+    })
+
+    switch (level) {
+      case 1:
+        state.bullets.push(makeBullet(cx, cy))
+        break
+      case 2:
+        state.bullets.push(makeBullet(cx - 10, cy))
+        state.bullets.push(makeBullet(cx + 10, cy))
+        break
+      case 3:
+        state.bullets.push(makeBullet(cx - 12, cy, -1.5))
+        state.bullets.push(makeBullet(cx, cy))
+        state.bullets.push(makeBullet(cx + 12, cy, 1.5))
+        break
+      case 4: {
+        // 中间直线
+        state.bullets.push(makeBullet(cx - 3, cy, 0, -8))
+        // 左侧直线
+        state.bullets.push(makeBullet(cx - 15, cy, 0, -8))
+        // 右侧直线
+        state.bullets.push(makeBullet(cx + 11, cy, 0, -8))
+        // 交叉弹道（左右摆动）
+        const crossOffset = Math.sin(Date.now() * 0.01) * 3
+        state.bullets.push(makeBullet(cx - 10 + crossOffset, cy, -2, -7))
+        state.bullets.push(makeBullet(cx + 6 - crossOffset, cy, 2, -7))
+        break
+      }
+      case 5: {
+        // 中间子弹（带发光圈）
+        state.bullets.push(makeBullet(cx - 3, cy, 0, -9, { hasGlow: true }))
+        // 左侧子弹
+        state.bullets.push(makeBullet(cx - 16, cy, -0.5, -9, { hasGlow: true }))
+        // 右侧子弹
+        state.bullets.push(makeBullet(cx + 12, cy, 0.5, -9, { hasGlow: true }))
+        // 最左侧宽散弹
+        state.bullets.push(makeBullet(cx - 28, cy, -2.5, -8))
+        // 最右侧宽散弹
+        state.bullets.push(makeBullet(cx + 24, cy, 2.5, -8))
+        break
+      }
     }
   }, [])
 
@@ -444,6 +493,12 @@ export default function Thunderbolt() {
           } else {
             state.lives--
             setLives(state.lives)
+            if (state.weaponLevel > 1) {
+              state.weaponLevel--
+              setWeaponLevel(state.weaponLevel)
+              setShowWeaponDown(true)
+              setTimeout(() => setShowWeaponDown(false), 1000)
+            }
             state.player.invincible = true
             state.player.invincibleTimer = 1500
 
@@ -469,6 +524,12 @@ export default function Thunderbolt() {
           }
           state.lives--
           setLives(state.lives)
+          if (state.weaponLevel > 1) {
+            state.weaponLevel--
+            setWeaponLevel(state.weaponLevel)
+            setShowWeaponDown(true)
+            setTimeout(() => setShowWeaponDown(false), 1000)
+          }
           state.player.invincible = true
           state.player.invincibleTimer = 1500
           createExplosion(state.player.x, state.player.y, '#ff0000', 15)
@@ -492,9 +553,11 @@ export default function Thunderbolt() {
 
         switch (powerup.type) {
           case 'weapon':
-            if (state.weaponLevel < 3) {
+            if (state.weaponLevel < MAX_WEAPON_LEVEL) {
               state.weaponLevel++
               setWeaponLevel(state.weaponLevel)
+              setShowWeaponUp(true)
+              setTimeout(() => setShowWeaponUp(false), 1000)
             }
             break
           case 'shield':
@@ -520,6 +583,34 @@ export default function Thunderbolt() {
     })
 
   }, [createExplosion, fireBullet, spawnEnemy, spawnPowerup, bestScore])
+
+  const drawGlowRing = (ctx, x, y, size, color) => {
+    ctx.save()
+    ctx.shadowBlur = 0
+
+    // 外发光圈
+    ctx.beginPath()
+    ctx.arc(x, y, size, 0, Math.PI * 2)
+    ctx.fillStyle = color
+    ctx.globalAlpha = 0.3
+    ctx.fill()
+
+    // 中发光圈
+    ctx.beginPath()
+    ctx.arc(x, y, size * 0.6, 0, Math.PI * 2)
+    ctx.fillStyle = color
+    ctx.globalAlpha = 0.5
+    ctx.fill()
+
+    // 内发光圈
+    ctx.beginPath()
+    ctx.arc(x, y, size * 0.3, 0, Math.PI * 2)
+    ctx.fillStyle = '#ffffff'
+    ctx.globalAlpha = 0.8
+    ctx.fill()
+
+    ctx.restore()
+  }
 
   const draw = useCallback((ctx) => {
     const state = gameStateRef.current
@@ -639,18 +730,27 @@ export default function Thunderbolt() {
 
     // Draw player bullets with trails
     state.bullets.forEach(bullet => {
+      const bulletColor = BULLET_COLORS[bullet.level] || BULLET_COLORS[1]
+
+      // Level 5 glow ring (draw behind trail and bullet)
+      if (bullet.hasGlow) {
+        drawGlowRing(ctx, bullet.x, bullet.y, BULLET_RADIUS + 6, bulletColor)
+      }
+
       // Trail
       bullet.trail.forEach((t, i) => {
-        ctx.fillStyle = `rgba(255, 255, 0, ${0.5 - i * 0.1})`
+        ctx.globalAlpha = 0.5 - i * 0.1
+        ctx.fillStyle = bulletColor
         ctx.beginPath()
         ctx.arc(t.x, t.y, BULLET_RADIUS - i * 0.5, 0, Math.PI * 2)
         ctx.fill()
       })
+      ctx.globalAlpha = 1
 
-      // Bullet
-      ctx.fillStyle = '#00e5f0'
+      // Bullet body
+      ctx.fillStyle = bulletColor
       ctx.beginPath()
-      ctx.arc(bullet.x, bullet.y, BULLET_RADIUS, 0, Math.PI * 2)
+      ctx.arc(bullet.x, bullet.y, BULLET_RADIUS + (bullet.level >= 4 ? 1 : 0), 0, Math.PI * 2)
       ctx.fill()
     })
 
@@ -840,7 +940,7 @@ export default function Thunderbolt() {
             <span className="mx-4 text-[#666]">|</span>
             <span className="text-[#22d3d3]">难度:Lv.{gameLevel}</span>
             <span className="mx-4 text-[#666]">|</span>
-            <span className="text-[#a855f7]">武器:</span> Lv.{weaponLevel}
+            <span style={{ color: BULLET_COLORS[weaponLevel] || '#a855f7' }}>武器: Lv.{weaponLevel}</span>
           </div>
         </div>
 
@@ -864,7 +964,7 @@ export default function Thunderbolt() {
               </div>
               <button
                 onClick={startGame}
-                className="px-12 py-3.5 text-lg bg-gradient-to-b from-[#00e5f0] to-[#00b8d4] text-white rounded-xl font-bold cursor-pointer transition-all duration-100 border-t border-[#5cf0ff] shadow-[0_4px_0_#008899,0_5px_10px_rgba(0,0,0,0.3)] hover:shadow-[0_4px_0_#008899,0_6px_15px_rgba(0,229,240,0.4)] active:shadow-[0_2px_0_#008899,0_2px_5px_rgba(0,0,0,0.3)] active:translate-y-1"              >                再玩一次              </button>            </div>          )}          {/* 等级提升特效 */}          {showLevelUp && (            <div className="absolute inset-0 pointer-events-none flex items-center justify-center">              <div className="animate-ping text-[#ffe066] text-6xl font-bold drop-shadow-[0_0_20px_rgba(255,224,102,0.8)]">                Lv.{gameLevel}!              </div>            </div>          )}        </div>
+                className="px-12 py-3.5 text-lg bg-gradient-to-b from-[#00e5f0] to-[#00b8d4] text-white rounded-xl font-bold cursor-pointer transition-all duration-100 border-t border-[#5cf0ff] shadow-[0_4px_0_#008899,0_5px_10px_rgba(0,0,0,0.3)] hover:shadow-[0_4px_0_#008899,0_6px_15px_rgba(0,229,240,0.4)] active:shadow-[0_2px_0_#008899,0_2px_5px_rgba(0,0,0,0.3)] active:translate-y-1"              >                再玩一次              </button>            </div>          )}          {/* 等级提升特效 */}          {showLevelUp && (            <div className="absolute inset-0 pointer-events-none flex items-center justify-center">              <div className="animate-ping text-[#ffe066] text-6xl font-bold drop-shadow-[0_0_20px_rgba(255,224,102,0.8)]">                Lv.{gameLevel}!              </div>            </div>          )}          {/* 武器升级特效 */}          {showWeaponUp && (            <div className="absolute top-1/2 left-1/2 pointer-events-none -translate-x-1/2 -translate-y-1/2">              <div className="animate-bounce text-[#ff3333] text-5xl font-bold drop-shadow-[0_0_25px_rgba(255,51,51,0.9)]">                ⬆ 武器升级 Lv.{weaponLevel}!</div>            </div>          )}          {/* 武器降级特效 */}          {showWeaponDown && (            <div className="absolute top-1/2 left-1/2 pointer-events-none -translate-x-1/2 -translate-y-1/2">              <div className="animate-pulse text-[#888888] text-4xl font-bold drop-shadow-[0_0_15px_rgba(136,136,136,0.7)]">                ⬇ 武器降级 Lv.{weaponLevel}</div>            </div>          )}        </div>
 
         {/* Controls */}
         <div className="flex justify-between items-center mt-4 px-4 py-3 bg-[rgba(0,0,0,0.3)] rounded-lg border border-[rgba(100,100,200,0.2)]">
