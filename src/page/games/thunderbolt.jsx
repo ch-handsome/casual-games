@@ -11,9 +11,29 @@ const CANVAS_WIDTH = 1000
 const CANVAS_HEIGHT = 550
 const PLAYER_SIZE = 20
 const BULLET_RADIUS = 4
+const SCORE_PER_LEVEL = 2000
+const MAX_LEVEL = 10
+
+// 等级难度参数配置
+const LEVEL_CONFIG = {
+  1: { spawnInterval: 1500, enemySpeed: 2.0, shootInterval: 2000, eliteRate: 0.03, hpMultiplier: 1.0 },
+  2: { spawnInterval: 1420, enemySpeed: 2.3, shootInterval: 1900, eliteRate: 0.04, hpMultiplier: 1.1 },
+  3: { spawnInterval: 1340, enemySpeed: 2.6, shootInterval: 1800, eliteRate: 0.05, hpMultiplier: 1.2 },
+  4: { spawnInterval: 1260, enemySpeed: 2.9, shootInterval: 1700, eliteRate: 0.06, hpMultiplier: 1.3 },
+  5: { spawnInterval: 1180, enemySpeed: 3.2, shootInterval: 1600, eliteRate: 0.07, hpMultiplier: 1.4 },
+  6: { spawnInterval: 1100, enemySpeed: 3.5, shootInterval: 1500, eliteRate: 0.08, hpMultiplier: 1.5 },
+  7: { spawnInterval: 1020, enemySpeed: 3.8, shootInterval: 1400, eliteRate: 0.09, hpMultiplier: 1.6 },
+  8: { spawnInterval: 940, enemySpeed: 4.1, shootInterval: 1300, eliteRate: 0.10, hpMultiplier: 1.7 },
+  9: { spawnInterval: 860, enemySpeed: 4.4, shootInterval: 1200, eliteRate: 0.11, hpMultiplier: 1.8 },
+  10: { spawnInterval: 780, enemySpeed: 4.7, shootInterval: 1100, eliteRate: 0.12, hpMultiplier: 2.0 },
+}
+
+// 计算等级
+const calculateLevel = (score) => Math.min(MAX_LEVEL, Math.floor(score / SCORE_PER_LEVEL) + 1)
+
 const ENEMY_TYPES = {
-  small: { color: '#e85d75', hp: 1, score: 10, speed: 3, width: 30, height: 30 },
-  medium: { color: '#f0a04e', hp: 3, score: 30, speed: 2, width: 40, height: 40 },
+  small: { color: '#e85d75', hp: 1, score: 10, speed: 3, width: 35, height: 35 },
+  medium: { color: '#f0a04e', hp: 3, score: 30, speed: 2, width: 45, height: 45 },
   large: { color: '#a855f7', hp: 5, score: 50, speed: 1.5, width: 50, height: 50 },
   elite: { color: '#22d3d3', hp: 8, score: 100, speed: 1.2, width: 60, height: 60 },
 }
@@ -32,6 +52,8 @@ export default function Thunderbolt() {
   const [isPaused, setIsPaused] = useState(false)
   const [isGameOver, setIsGameOver] = useState(false)
   const [fireRate, setFireRate] = useState('正常')
+  const [gameLevel, setGameLevel] = useState(1)
+  const [showLevelUp, setShowLevelUp] = useState(false)
 
   // 游戏结束显示覆盖层
 
@@ -47,6 +69,7 @@ export default function Thunderbolt() {
     score: 0,
     lives: 3,
     weaponLevel: 1,
+    level: 1,
     shieldActive: false,
     shieldTimer: 0,
     speedActive: false,
@@ -108,6 +131,7 @@ export default function Thunderbolt() {
     state.score = 0
     state.lives = 3
     state.weaponLevel = 1
+    state.level = 1
     state.shieldActive = false
     state.shieldTimer = 0
     state.speedActive = false
@@ -121,9 +145,11 @@ export default function Thunderbolt() {
     setScore(0)
     setLives(3)
     setWeaponLevel(1)
+    setGameLevel(1)
     setIsPaused(false)
     setIsGameOver(false)
     setFireRate('正常')
+    setShowLevelUp(false)
     initStars()
 
     if (gameLoopRef.current) cancelAnimationFrame(gameLoopRef.current)
@@ -151,22 +177,32 @@ export default function Thunderbolt() {
   }, [])
 
   const spawnEnemy = useCallback((state) => {
-    const types = ['small', 'small', 'small', 'medium', 'medium', 'large', 'elite']
+    const level = state.level
+    const config = LEVEL_CONFIG[level]
+    const eliteRate = config.eliteRate
+
     const rand = Math.random()
     let type
-    if (rand < 0.5) type = 'small'
-    else if (rand < 0.75) type = 'medium'
-    else if (rand < 0.9) type = 'large'
+    if (rand < 0.5 - eliteRate) type = 'small'
+    else if (rand < 0.75 - eliteRate / 2) type = 'medium'
+    else if (rand < 0.9 - eliteRate / 3) type = 'large'
     else type = 'elite'
 
-    const config = ENEMY_TYPES[type]
+    const baseConfig = ENEMY_TYPES[type]
+    const speedMultiplier = config.enemySpeed / 2.0
+    const hpMultiplier = config.hpMultiplier
+
     const enemy = {
       type,
-      x: Math.random() * (CANVAS_WIDTH - config.width) + config.width / 2,
-      y: -config.height,
-      ...config,
-      hp: config.hp,
-      shootTimer: Math.random() * 2000,
+      x: Math.random() * (CANVAS_WIDTH - baseConfig.width) + baseConfig.width / 2,
+      y: -baseConfig.height,
+      hp: Math.ceil(baseConfig.hp * hpMultiplier),
+      score: baseConfig.score,
+      speed: baseConfig.speed * speedMultiplier,
+      width: baseConfig.width,
+      height: baseConfig.height,
+      color: baseConfig.color,
+      shootTimer: Math.random() * config.shootInterval,
       angle: 0,
     }
     state.enemies.push(enemy)
@@ -283,7 +319,8 @@ export default function Thunderbolt() {
 
     // Spawn enemies
     state.spawnTimer += deltaTime
-    const spawnDelay = Math.max(400, 1500 - Math.floor(state.score / 200) * 30)
+    const levelConfig = LEVEL_CONFIG[state.level]
+    const spawnDelay = Math.max(400, levelConfig.spawnInterval)
     if (state.spawnTimer >= spawnDelay) {
       state.spawnTimer = 0
       spawnEnemy(state)
@@ -308,7 +345,7 @@ export default function Thunderbolt() {
       // Enemy shooting
       enemy.shootTimer -= deltaTime
       if (enemy.shootTimer <= 0) {
-        enemy.shootTimer = 1500 + Math.random() * 1000
+        enemy.shootTimer = levelConfig.shootInterval + Math.random() * 1000
         if (enemy.type !== 'small') {
           state.enemyBullets.push({
             x: enemy.x,
@@ -361,6 +398,15 @@ export default function Thunderbolt() {
             createExplosion(enemy.x, enemy.y, enemy.color, 20)
             state.score += enemy.score
             setScore(state.score)
+
+            // Check level up
+            const newLevel = calculateLevel(state.score)
+            if (newLevel > state.level) {
+              state.level = newLevel
+              setGameLevel(newLevel)
+              setShowLevelUp(true)
+              setTimeout(() => setShowLevelUp(false), 1500)
+            }
 
             // Drop powerup chance
             if (Math.random() < 0.15) {
@@ -792,7 +838,9 @@ export default function Thunderbolt() {
             <span className="mx-4 text-[#666]">|</span>
             <span className="text-[#ffe066]">最高:</span> {bestScore}
             <span className="mx-4 text-[#666]">|</span>
-            <span className="text-[#a855f7]">等级:</span> {weaponLevel}
+            <span className="text-[#22d3d3]">难度:Lv.{gameLevel}</span>
+            <span className="mx-4 text-[#666]">|</span>
+            <span className="text-[#a855f7]">武器:</span> Lv.{weaponLevel}
           </div>
         </div>
 
@@ -816,13 +864,7 @@ export default function Thunderbolt() {
               </div>
               <button
                 onClick={startGame}
-                className="px-12 py-3.5 text-lg bg-gradient-to-b from-[#00e5f0] to-[#00b8d4] text-white rounded-xl font-bold cursor-pointer transition-all duration-100 border-t border-[#5cf0ff] shadow-[0_4px_0_#008899,0_5px_10px_rgba(0,0,0,0.3)] hover:shadow-[0_4px_0_#008899,0_6px_15px_rgba(0,229,240,0.4)] active:shadow-[0_2px_0_#008899,0_2px_5px_rgba(0,0,0,0.3)] active:translate-y-1"
-              >
-                再玩一次
-              </button>
-            </div>
-          )}
-        </div>
+                className="px-12 py-3.5 text-lg bg-gradient-to-b from-[#00e5f0] to-[#00b8d4] text-white rounded-xl font-bold cursor-pointer transition-all duration-100 border-t border-[#5cf0ff] shadow-[0_4px_0_#008899,0_5px_10px_rgba(0,0,0,0.3)] hover:shadow-[0_4px_0_#008899,0_6px_15px_rgba(0,229,240,0.4)] active:shadow-[0_2px_0_#008899,0_2px_5px_rgba(0,0,0,0.3)] active:translate-y-1"              >                再玩一次              </button>            </div>          )}          {/* 等级提升特效 */}          {showLevelUp && (            <div className="absolute inset-0 pointer-events-none flex items-center justify-center">              <div className="animate-ping text-[#ffe066] text-6xl font-bold drop-shadow-[0_0_20px_rgba(255,224,102,0.8)]">                Lv.{gameLevel}!              </div>            </div>          )}        </div>
 
         {/* Controls */}
         <div className="flex justify-between items-center mt-4 px-4 py-3 bg-[rgba(0,0,0,0.3)] rounded-lg border border-[rgba(100,100,200,0.2)]">
