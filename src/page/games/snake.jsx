@@ -620,7 +620,7 @@ export default function SnakeGame() {
           </div>
 
           {showGameOver && (
-            <div className="absolute inset-0 bg-black/85 rounded-xl flex flex-col items-center justify-center gap-5 backdrop-blur-sm animate-[fadeIn_0.3s_ease]">
+            <div className="absolute inset-0 bg-black/85 rounded-xl flex flex-col items-center justify-center gap-5 backdrop-blur-sm animate-[fadeIn_0.3s_ease] z-[100]">
               <div className="text-[#e94560] text-5xl font-bold animate-[shake_0.5s_ease]">
                 游戏结束
               </div>

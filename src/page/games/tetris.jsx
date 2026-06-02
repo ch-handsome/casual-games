@@ -484,7 +484,7 @@ export default function Tetris() {
 
             {/* Overlay */}
             {isGameOver && (
-              <div className="absolute inset-0 bg-black/80 rounded-xl flex flex-col items-center justify-center z-10">
+              <div className="absolute inset-0 bg-black/80 rounded-xl flex flex-col items-center justify-center z-[100]">
                 <h2 className="text-4xl font-bold text-red-500 mb-4">游戏结束</h2>
                 <p className="text-white text-xl mb-2">最终得分: {score}</p>
                 <p className="text-white/60 mb-6">消除行数: {linesCleared}</p>
