@@ -33,6 +33,8 @@ export default function Thunderbolt() {
   const [isGameOver, setIsGameOver] = useState(false)
   const [fireRate, setFireRate] = useState('正常')
 
+  // 游戏结束显示覆盖层
+
   const canvasRef = useRef(null)
   const gameStateRef = useRef({
     player: { x: CANVAS_WIDTH / 2, y: CANVAS_HEIGHT - 60, invincible: false, invincibleTimer: 0 },
@@ -671,23 +673,7 @@ export default function Thunderbolt() {
       }
     }
 
-    // Game over overlay
-    if (state.isGameOver) {
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.7)'
-      ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
-
-      ctx.fillStyle = '#ff4757'
-      ctx.font = 'bold 48px Arial'
-      ctx.textAlign = 'center'
-      ctx.fillText('游戏结束', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 - 30)
-
-      ctx.fillStyle = '#ffffff'
-      ctx.font = '24px Arial'
-      ctx.fillText(`最终得分: ${state.score}`, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 20)
-      ctx.fillText('点击"新游戏"重新开始', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 60)
-    }
-
-    // Pause overlay
+    // Shield effect - 使用图片或 fallback
     if (state.isPaused && !state.isGameOver) {
       ctx.fillStyle = 'rgba(0, 0, 0, 0.5)'
       ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
@@ -811,12 +797,32 @@ export default function Thunderbolt() {
         </div>
 
         {/* Canvas */}
-        <canvas
-          ref={canvasRef}
-          width={CANVAS_WIDTH}
-          height={CANVAS_HEIGHT}
-          className="block rounded-lg border-2 border-[rgba(100,100,200,0.4)] shadow-[0_0_20px_rgba(0,229,240,0.2),inset_0_0_60px_rgba(0,0,0,0.5)] cursor-none"
-        />
+        <div className="relative">
+          <canvas
+            ref={canvasRef}
+            width={CANVAS_WIDTH}
+            height={CANVAS_HEIGHT}
+            className="block rounded-lg border-2 border-[rgba(100,100,200,0.4)] shadow-[0_0_20px_rgba(0,229,240,0.2),inset_0_0_60px_rgba(0,0,0,0.5)] cursor-none"
+          />
+
+          {/* 游戏结束覆盖层 */}
+          {isGameOver && (
+            <div className="absolute inset-0 bg-black/85 rounded-lg flex flex-col items-center justify-center gap-5 backdrop-blur-sm">
+              <div className="text-[#ff4757] text-5xl font-bold">
+                游戏结束
+              </div>
+              <div className="text-white text-2xl">
+                得分: <span className="text-[#00e5f0] text-4xl">{score}</span>
+              </div>
+              <button
+                onClick={startGame}
+                className="px-12 py-3.5 text-lg bg-gradient-to-b from-[#00e5f0] to-[#00b8d4] text-white rounded-xl font-bold cursor-pointer transition-all duration-100 border-t border-[#5cf0ff] shadow-[0_4px_0_#008899,0_5px_10px_rgba(0,0,0,0.3)] hover:shadow-[0_4px_0_#008899,0_6px_15px_rgba(0,229,240,0.4)] active:shadow-[0_2px_0_#008899,0_2px_5px_rgba(0,0,0,0.3)] active:translate-y-1"
+              >
+                再玩一次
+              </button>
+            </div>
+          )}
+        </div>
 
         {/* Controls */}
         <div className="flex justify-between items-center mt-4 px-4 py-3 bg-[rgba(0,0,0,0.3)] rounded-lg border border-[rgba(100,100,200,0.2)]">
