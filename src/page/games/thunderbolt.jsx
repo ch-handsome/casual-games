@@ -15,7 +15,7 @@ const ENEMY_TYPES = {
   small: { color: '#e85d75', hp: 1, score: 10, speed: 3, width: 30, height: 30 },
   medium: { color: '#f0a04e', hp: 3, score: 30, speed: 2, width: 40, height: 40 },
   large: { color: '#a855f7', hp: 5, score: 50, speed: 1.5, width: 50, height: 50 },
-  elite: { color: '#22d3d3', hp: 8, score: 100, speed: 1.2, width: 45, height: 45 },
+  elite: { color: '#22d3d3', hp: 8, score: 100, speed: 1.2, width: 60, height: 60 },
 }
 const POWERUPS = {
   weapon: { color: '#e85d75', duration: 0 },
@@ -600,7 +600,7 @@ export default function Thunderbolt() {
       })
 
       // Bullet
-      ctx.fillStyle = '#ffff00'
+      ctx.fillStyle = '#00e5f0'
       ctx.beginPath()
       ctx.arc(bullet.x, bullet.y, BULLET_RADIUS, 0, Math.PI * 2)
       ctx.fill()
@@ -653,7 +653,7 @@ export default function Thunderbolt() {
     // Shield effect - 使用图片或 fallback
     if (state.shieldActive) {
       const shieldImgData = imagesRef.current['shield']
-      const shieldSize = PLAYER_SIZE * 2.5
+      const shieldSize = PLAYER_SIZE * 3.5
 
       if (shieldImgData && shieldImgData.loaded) {
         ctx.globalAlpha = 0.5 + Math.sin(Date.now() / 100) * 0.3
@@ -665,7 +665,7 @@ export default function Thunderbolt() {
         ctx.lineWidth = 3
         ctx.globalAlpha = 0.5 + Math.sin(Date.now() / 100) * 0.3
         ctx.beginPath()
-        ctx.arc(state.player.x, state.player.y, PLAYER_SIZE, 0, Math.PI * 2)
+        ctx.arc(state.player.x, state.player.y, PLAYER_SIZE * 1.5, 0, Math.PI * 2)
         ctx.stroke()
         ctx.globalAlpha = 1
       }
@@ -740,8 +740,11 @@ export default function Thunderbolt() {
 
       const rect = canvas.getBoundingClientRect()
       const scaleX = CANVAS_WIDTH / rect.width
+      const scaleY = CANVAS_HEIGHT / rect.height
       const x = (e.clientX - rect.left) * scaleX
+      const y = (e.clientY - rect.top) * scaleY
       state.player.x = Math.max(PLAYER_SIZE / 2, Math.min(CANVAS_WIDTH - PLAYER_SIZE / 2, x))
+      state.player.y = Math.max(PLAYER_SIZE / 2, Math.min(CANVAS_HEIGHT - PLAYER_SIZE / 2, y))
     }
 
     window.addEventListener('keydown', handleKeyDown)
@@ -764,8 +767,11 @@ export default function Thunderbolt() {
 
       const rect = canvas.getBoundingClientRect()
       const scaleX = CANVAS_WIDTH / rect.width
+      const scaleY = CANVAS_HEIGHT / rect.height
       const x = (e.clientX - rect.left) * scaleX
+      const y = (e.clientY - rect.top) * scaleY
       state.player.x = Math.max(PLAYER_SIZE / 2, Math.min(CANVAS_WIDTH - PLAYER_SIZE / 2, x))
+      state.player.y = Math.max(PLAYER_SIZE / 2, Math.min(CANVAS_HEIGHT - PLAYER_SIZE / 2, y))
     }
 
     canvas.addEventListener('mousemove', handleMouseMove)
@@ -786,7 +792,7 @@ export default function Thunderbolt() {
   }
 
   return (
-    <div className="w-full h-full min-h-[600px] flex flex-col items-center p-5 bg-gradient-to-br from-[#0a0a1a] via-[#1a1a2e] to-[#0f0f23]">
+    <div className="w-full h-full min-h-[600px] flex flex-col items-center p-5">
       <div className="bg-gradient-to-b from-[rgba(30,30,60,0.9)] to-[rgba(20,20,40,0.95)] rounded-2xl p-5 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.1)] border border-[rgba(100,100,200,0.3)]">
         {/* Header */}
         <div className="flex justify-between items-center mb-4 px-4 py-3 bg-[rgba(0,0,0,0.3)] rounded-lg border border-[rgba(100,100,200,0.2)]">
