@@ -1,9 +1,15 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
+import playerImg from '@/assets/thunderbolt/player.png'
+import shieldImg from '@/assets/thunderbolt/shield.png'
+import enemy1Img from '@/assets/thunderbolt/enemy1.png'
+import enemy2Img from '@/assets/thunderbolt/enemy2.png'
+import enemy3Img from '@/assets/thunderbolt/enemy3.png'
+import enemy4Img from '@/assets/thunderbolt/enemy4.png'
 
 const STORAGE_KEY = 'thunderbolt-best-score'
-const CANVAS_WIDTH = 800
+const CANVAS_WIDTH = 1000
 const CANVAS_HEIGHT = 550
-const PLAYER_SIZE = 30
+const PLAYER_SIZE = 20
 const BULLET_RADIUS = 4
 const ENEMY_TYPES = {
   small: { color: '#e85d75', hp: 1, score: 10, speed: 3, width: 30, height: 30 },
@@ -53,6 +59,22 @@ export default function Thunderbolt() {
 
   const gameLoopRef = useRef(null)
   const lastTimeRef = useRef(0)
+  const imagesRef = useRef({})
+
+  // 图片素材 - Vite 导入的 URL 创建 Image 对象
+  useEffect(() => {
+    const load = (key, src) => {
+      const img = new Image()
+      img.src = src
+      imagesRef.current[key] = { img, loaded: true }
+    }
+    load('player', playerImg)
+    load('shield', shieldImg)
+    load('enemy1', enemy1Img)
+    load('enemy2', enemy2Img)
+    load('enemy3', enemy3Img)
+    load('enemy4', enemy4Img)
+  }, [])
 
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY)
@@ -495,50 +517,56 @@ export default function Thunderbolt() {
 
     // Draw enemies
     state.enemies.forEach(enemy => {
-      ctx.fillStyle = enemy.color
+      // 获取对应的图片
+      const typeMap = { small: 'enemy1', medium: 'enemy2', large: 'enemy3', elite: 'enemy4' }
+      const imgData = imagesRef.current[typeMap[enemy.type]]
+      const size = enemy.width
 
-      if (enemy.type === 'small') {
-        // Triangle pointing down
-        ctx.beginPath()
-        ctx.moveTo(enemy.x, enemy.y + enemy.height / 2)
-        ctx.lineTo(enemy.x - enemy.width / 2, enemy.y - enemy.height / 2)
-        ctx.lineTo(enemy.x + enemy.width / 2, enemy.y - enemy.height / 2)
-        ctx.closePath()
-        ctx.fill()
-      } else if (enemy.type === 'medium') {
-        // Diamond
-        ctx.beginPath()
-        ctx.moveTo(enemy.x, enemy.y - enemy.height / 2)
-        ctx.lineTo(enemy.x + enemy.width / 2, enemy.y)
-        ctx.lineTo(enemy.x, enemy.y + enemy.height / 2)
-        ctx.lineTo(enemy.x - enemy.width / 2, enemy.y)
-        ctx.closePath()
-        ctx.fill()
-      } else if (enemy.type === 'large') {
-        // Hexagon
-        ctx.beginPath()
-        for (let i = 0; i < 6; i++) {
-          const angle = (Math.PI * 2 * i) / 6 - Math.PI / 2
-          const x = enemy.x + Math.cos(angle) * enemy.width / 2
-          const y = enemy.y + Math.sin(angle) * enemy.height / 2
-          if (i === 0) ctx.moveTo(x, y)
-          else ctx.lineTo(x, y)
+      if (imgData && imgData.loaded) {
+        ctx.drawImage(imgData.img, enemy.x - size / 2, enemy.y - size / 2, size, size)
+      } else {
+        // Fallback: 绘制原形状
+        ctx.fillStyle = enemy.color
+
+        if (enemy.type === 'small') {
+          ctx.beginPath()
+          ctx.moveTo(enemy.x, enemy.y + enemy.height / 2)
+          ctx.lineTo(enemy.x - enemy.width / 2, enemy.y - enemy.height / 2)
+          ctx.lineTo(enemy.x + enemy.width / 2, enemy.y - enemy.height / 2)
+          ctx.closePath()
+          ctx.fill()
+        } else if (enemy.type === 'medium') {
+          ctx.beginPath()
+          ctx.moveTo(enemy.x, enemy.y - enemy.height / 2)
+          ctx.lineTo(enemy.x + enemy.width / 2, enemy.y)
+          ctx.lineTo(enemy.x, enemy.y + enemy.height / 2)
+          ctx.lineTo(enemy.x - enemy.width / 2, enemy.y)
+          ctx.closePath()
+          ctx.fill()
+        } else if (enemy.type === 'large') {
+          ctx.beginPath()
+          for (let i = 0; i < 6; i++) {
+            const angle = (Math.PI * 2 * i) / 6 - Math.PI / 2
+            const x = enemy.x + Math.cos(angle) * enemy.width / 2
+            const y = enemy.y + Math.sin(angle) * enemy.height / 2
+            if (i === 0) ctx.moveTo(x, y)
+            else ctx.lineTo(x, y)
+          }
+          ctx.closePath()
+          ctx.fill()
+        } else if (enemy.type === 'elite') {
+          ctx.beginPath()
+          for (let i = 0; i < 10; i++) {
+            const angle = (Math.PI * 2 * i) / 10 - Math.PI / 2
+            const r = i % 2 === 0 ? enemy.width / 2 : enemy.width / 4
+            const x = enemy.x + Math.cos(angle) * r
+            const y = enemy.y + Math.sin(angle) * r
+            if (i === 0) ctx.moveTo(x, y)
+            else ctx.lineTo(x, y)
+          }
+          ctx.closePath()
+          ctx.fill()
         }
-        ctx.closePath()
-        ctx.fill()
-      } else if (enemy.type === 'elite') {
-        // Star
-        ctx.beginPath()
-        for (let i = 0; i < 10; i++) {
-          const angle = (Math.PI * 2 * i) / 10 - Math.PI / 2
-          const r = i % 2 === 0 ? enemy.width / 2 : enemy.width / 4
-          const x = enemy.x + Math.cos(angle) * r
-          const y = enemy.y + Math.sin(angle) * r
-          if (i === 0) ctx.moveTo(x, y)
-          else ctx.lineTo(x, y)
-        }
-        ctx.closePath()
-        ctx.fill()
       }
 
       // Health bar for multi-hp enemies
@@ -599,31 +627,48 @@ export default function Thunderbolt() {
       ctx.closePath()
       ctx.fill()
 
-      // Draw player ship (triangle pointing up)
-      ctx.fillStyle = '#00e5f0'
-      ctx.beginPath()
-      ctx.moveTo(state.player.x, state.player.y - PLAYER_SIZE / 2)
-      ctx.lineTo(state.player.x - PLAYER_SIZE / 2, state.player.y + PLAYER_SIZE / 2)
-      ctx.lineTo(state.player.x + PLAYER_SIZE / 2, state.player.y + PLAYER_SIZE / 2)
-      ctx.closePath()
-      ctx.fill()
+      // 绘制玩家飞船 - 使用图片或 fallback
+      const playerImgData = imagesRef.current['player']
+      if (playerImgData && playerImgData.loaded) {
+        const playerImgSize = PLAYER_SIZE * 2.5
+        ctx.drawImage(playerImgData.img, state.player.x - playerImgSize / 2, state.player.y - playerImgSize / 2, playerImgSize, playerImgSize)
+      } else {
+        // Fallback: 绘制三角形飞船
+        ctx.fillStyle = '#00e5f0'
+        ctx.beginPath()
+        ctx.moveTo(state.player.x, state.player.y - PLAYER_SIZE / 2)
+        ctx.lineTo(state.player.x - PLAYER_SIZE / 2, state.player.y + PLAYER_SIZE / 2)
+        ctx.lineTo(state.player.x + PLAYER_SIZE / 2, state.player.y + PLAYER_SIZE / 2)
+        ctx.closePath()
+        ctx.fill()
 
-      // Cockpit
-      ctx.fillStyle = '#ffffff'
-      ctx.beginPath()
-      ctx.arc(state.player.x, state.player.y, 5, 0, Math.PI * 2)
-      ctx.fill()
+        // Cockpit
+        ctx.fillStyle = '#ffffff'
+        ctx.beginPath()
+        ctx.arc(state.player.x, state.player.y, 5, 0, Math.PI * 2)
+        ctx.fill()
+      }
     }
 
-    // Shield effect
+    // Shield effect - 使用图片或 fallback
     if (state.shieldActive) {
-      ctx.strokeStyle = '#4e9ef0'
-      ctx.lineWidth = 3
-      ctx.globalAlpha = 0.5 + Math.sin(Date.now() / 100) * 0.3
-      ctx.beginPath()
-      ctx.arc(state.player.x, state.player.y, PLAYER_SIZE, 0, Math.PI * 2)
-      ctx.stroke()
-      ctx.globalAlpha = 1
+      const shieldImgData = imagesRef.current['shield']
+      const shieldSize = PLAYER_SIZE * 2.5
+
+      if (shieldImgData && shieldImgData.loaded) {
+        ctx.globalAlpha = 0.5 + Math.sin(Date.now() / 100) * 0.3
+        ctx.drawImage(shieldImgData.img, state.player.x - shieldSize / 2, state.player.y - shieldSize / 2, shieldSize, shieldSize)
+        ctx.globalAlpha = 1
+      } else {
+        // Fallback: 绘制圆形护盾
+        ctx.strokeStyle = '#4e9ef0'
+        ctx.lineWidth = 3
+        ctx.globalAlpha = 0.5 + Math.sin(Date.now() / 100) * 0.3
+        ctx.beginPath()
+        ctx.arc(state.player.x, state.player.y, PLAYER_SIZE, 0, Math.PI * 2)
+        ctx.stroke()
+        ctx.globalAlpha = 1
+      }
     }
 
     // Game over overlay
@@ -741,47 +786,21 @@ export default function Thunderbolt() {
   }
 
   return (
-    <div style={{
-      background: 'linear-gradient(135deg, #0a0a1a 0%, #1a1a2e 50%, #0f0f23 100%)',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      padding: '20px',
-      fontFamily: '"Segoe UI", "Microsoft YaHei", sans-serif',
-    }}>
-      <div style={{
-        background: 'linear-gradient(180deg, rgba(30, 30, 60, 0.9) 0%, rgba(20, 20, 40, 0.95) 100%)',
-        borderRadius: '16px',
-        padding: '20px',
-        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
-        border: '1px solid rgba(100, 100, 200, 0.3)',
-      }}>
+    <div className="w-full h-full min-h-[600px] flex flex-col items-center p-5 bg-gradient-to-br from-[#0a0a1a] via-[#1a1a2e] to-[#0f0f23]">
+      <div className="bg-gradient-to-b from-[rgba(30,30,60,0.9)] to-[rgba(20,20,40,0.95)] rounded-2xl p-5 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.1)] border border-[rgba(100,100,200,0.3)]">
         {/* Header */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '15px',
-          padding: '10px 15px',
-          background: 'rgba(0, 0, 0, 0.3)',
-          borderRadius: '8px',
-          border: '1px solid rgba(100, 100, 200, 0.2)',
-        }}>
-          <div style={{ display: 'flex', gap: '8px' }}>
+        <div className="flex justify-between items-center mb-4 px-4 py-3 bg-[rgba(0,0,0,0.3)] rounded-lg border border-[rgba(100,100,200,0.2)]">
+          <div className="flex gap-2">
             {Array(3).fill(0).map((_, i) => (
-              <span key={i} style={{
-                fontSize: '20px',
-                opacity: i < lives ? 1 : 0.3,
-                filter: i < lives ? 'none' : 'grayscale(100%)',
-              }}>❤️</span>
+              <span key={i} className={`text-2xl ${i < lives ? 'opacity-100' : 'opacity-30 grayscale'}`}>❤️</span>
             ))}
           </div>
-          <div style={{ color: '#fff', fontSize: '18px', fontWeight: 'bold' }}>
-            <span style={{ color: '#00e5f0' }}>分数:</span> {score}
-            <span style={{ margin: '0 15px', color: '#666' }}>|</span>
-            <span style={{ color: '#ffe066' }}>最高:</span> {bestScore}
-            <span style={{ margin: '0 15px', color: '#666' }}>|</span>
-            <span style={{ color: '#a855f7' }}>等级:</span> {weaponLevel}
+          <div className="text-white text-lg font-bold">
+            <span className="text-[#00e5f0]">分数:</span> {score}
+            <span className="mx-4 text-[#666]">|</span>
+            <span className="text-[#ffe066]">最高:</span> {bestScore}
+            <span className="mx-4 text-[#666]">|</span>
+            <span className="text-[#a855f7]">等级:</span> {weaponLevel}
           </div>
         </div>
 
@@ -790,79 +809,33 @@ export default function Thunderbolt() {
           ref={canvasRef}
           width={CANVAS_WIDTH}
           height={CANVAS_HEIGHT}
-          style={{
-            display: 'block',
-            borderRadius: '8px',
-            border: '2px solid rgba(100, 100, 200, 0.4)',
-            boxShadow: '0 0 20px rgba(0, 229, 240, 0.2), inset 0 0 60px rgba(0, 0, 0, 0.5)',
-            cursor: 'none',
-          }}
+          className="block rounded-lg border-2 border-[rgba(100,100,200,0.4)] shadow-[0_0_20px_rgba(0,229,240,0.2),inset_0_0_60px_rgba(0,0,0,0.5)] cursor-none"
         />
 
         {/* Controls */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginTop: '15px',
-          padding: '10px 15px',
-          background: 'rgba(0, 0, 0, 0.3)',
-          borderRadius: '8px',
-          border: '1px solid rgba(100, 100, 200, 0.2)',
-        }}>
-          <div style={{ display: 'flex', gap: '10px' }}>
+        <div className="flex justify-between items-center mt-4 px-4 py-3 bg-[rgba(0,0,0,0.3)] rounded-lg border border-[rgba(100,100,200,0.2)]">
+          <div className="flex gap-3">
             <button
               onClick={startGame}
-              style={{
-                padding: '10px 20px',
-                fontSize: '16px',
-                fontWeight: 'bold',
-                background: 'linear-gradient(180deg, #00e5f0 0%, #00b8d4 100%)',
-                color: '#000',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                boxShadow: '0 4px 15px rgba(0, 229, 240, 0.4)',
-                transition: 'all 0.2s',
-              }}
-              onMouseOver={e => e.target.style.transform = 'scale(1.05)'}
-              onMouseOut={e => e.target.style.transform = 'scale(1)'}
+              className="px-5 py-2.5 text-base font-bold bg-gradient-to-b from-[#00e5f0] to-[#00b8d4] text-black border-none rounded-lg cursor-pointer shadow-[0_4px_15px_rgba(0,229,240,0.4)] hover:scale-105 transition-all"
             >
               新游戏
             </button>
             <button
               onClick={togglePause}
-              style={{
-                padding: '10px 20px',
-                fontSize: '16px',
-                fontWeight: 'bold',
-                background: 'linear-gradient(180deg, #ffe066 0%, #f0a04e 100%)',
-                color: '#000',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                boxShadow: '0 4px 15px rgba(255, 224, 102, 0.4)',
-                transition: 'all 0.2s',
-              }}
-              onMouseOver={e => e.target.style.transform = 'scale(1.05)'}
-              onMouseOut={e => e.target.style.transform = 'scale(1)'}
+              className="px-5 py-2.5 text-base font-bold bg-gradient-to-b from-[#ffe066] to-[#f0a04e] text-black border-none rounded-lg cursor-pointer shadow-[0_4px_15px_rgba(255,224,102,0.4)] hover:scale-105 transition-all"
             >
               {isPaused ? '继续' : '暂停'}
             </button>
           </div>
-          <div style={{ color: '#fff', fontSize: '16px' }}>
-            <span style={{ color: '#ffe066' }}>射速:</span> {fireRate}
+          <div className="text-white text-base">
+            <span className="text-[#ffe066]">射速:</span> {fireRate}
           </div>
         </div>
       </div>
 
       {/* Instructions */}
-      <div style={{
-        marginTop: '20px',
-        color: 'rgba(255, 255, 255, 0.6)',
-        fontSize: '14px',
-        textAlign: 'center',
-      }}>
+      <div className="mt-5 text-white/60 text-sm text-center">
         <p>鼠标移动 或 WASD/方向键 控制 | P 键暂停 | 🔴 武器升级 | 🔵 护盾 | 🟢 回血 | 🟡 射速翻倍</p>
       </div>
     </div>
