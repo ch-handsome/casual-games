@@ -40,10 +40,10 @@ const LEVEL_CONFIG = {
 const calculateLevel = (score) => Math.min(MAX_LEVEL, Math.floor(score / SCORE_PER_LEVEL) + 1)
 
 const ENEMY_TYPES = {
-  small: { color: '#e85d75', hp: 1, score: 10, speed: 3, width: 35, height: 35 },
-  medium: { color: '#f0a04e', hp: 3, score: 30, speed: 2, width: 45, height: 45 },
-  large: { color: '#a855f7', hp: 5, score: 50, speed: 1.5, width: 50, height: 50 },
-  elite: { color: '#22d3d3', hp: 8, score: 100, speed: 1.2, width: 60, height: 60 },
+  small: { color: '#e85d75', hp: 1, score: 10, speed: 3, width: 40, height: 40 },
+  medium: { color: '#f0a04e', hp: 3, score: 30, speed: 2, width: 50, height: 50 },
+  large: { color: '#a855f7', hp: 5, score: 50, speed: 1.5, width: 60, height: 60 },
+  elite: { color: '#22d3d3', hp: 8, score: 100, speed: 1.2, width: 70, height: 70 },
 }
 const POWERUPS = {
   weapon: { color: '#ff3333', duration: 0 },
