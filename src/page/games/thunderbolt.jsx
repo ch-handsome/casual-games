@@ -170,9 +170,9 @@ export default function Thunderbolt() {
     state.enemies = []
     state.powerups = []
     state.particles = []
-    state.score = 12000
+    state.score = 0
     state.lives = 3
-    state.weaponLevel = 4
+    state.weaponLevel = 1
     state.level = 1
     state.shieldActive = false
     state.shieldTimer = 0
@@ -311,6 +311,7 @@ export default function Thunderbolt() {
       x: Math.random() * (CANVAS_WIDTH - baseConfig.width) + baseConfig.width / 2,
       y: -baseConfig.height,
       hp: Math.ceil(baseConfig.hp * hpMultiplier),
+      maxHp: Math.ceil(baseConfig.hp * hpMultiplier),
       score: baseConfig.score,
       speed: baseConfig.speed * speedMultiplier,
       width: baseConfig.width,
@@ -802,14 +803,14 @@ export default function Thunderbolt() {
       }
 
       // Health bar for multi-hp enemies
-      if (enemy.hp < ENEMY_TYPES[enemy.type].hp) {
+      if (enemy.hp < enemy.maxHp) {
         const barWidth = enemy.width
         const barHeight = 4
         ctx.fillStyle = '#333'
         ctx.fillRect(enemy.x - barWidth / 2, enemy.y - enemy.height / 2 - 10, barWidth, barHeight)
         ctx.fillStyle = '#00ff00'
         ctx.fillRect(enemy.x - barWidth / 2, enemy.y - enemy.height / 2 - 10,
-          barWidth * (enemy.hp / ENEMY_TYPES[enemy.type].hp), barHeight)
+          barWidth * (enemy.hp / enemy.maxHp), barHeight)
       }
     })
 
