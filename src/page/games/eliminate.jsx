@@ -926,7 +926,7 @@ export default function EliminateGame() {
         )}
 
         {/* 操作说明 */}
-        <div className="text-[#666] text-sm text-center">
+        <div className="text-[#AAA] text-sm text-center">
           <span className="text-[#00ffff]">点击</span>或<span className="text-[#00ffff]">触摸</span>选择方块，点击相邻方块交换，三个及以上相同颜色消除
         </div>
       </div>

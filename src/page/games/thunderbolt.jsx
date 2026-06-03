@@ -989,8 +989,10 @@ export default function Thunderbolt() {
       </div>
 
       {/* Instructions */}
-      <div className="mt-5 text-white/60 text-sm text-center">
-        <p>鼠标移动 或 WASD/方向键 控制 | P 键暂停 | 🔴 武器升级 | 🔵 护盾 | 🟢 回血 | 🟡 射速翻倍</p>
+      <div className="mt-5 text-[#AAA] text-sm text-center">
+        <span className="text-[#00ffff]">鼠标移动</span> 或 
+        <span className="text-[#00ffff]"> WASD/方向键</span> 控制 | 
+        <span className="text-[#00ffff]"> P</span> 键暂停 | 🔴 武器升级 | 🔵 护盾 | 🟢 回血 | 🟡 射速翻倍
       </div>
     </div>
   )

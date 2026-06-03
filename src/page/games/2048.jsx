@@ -389,7 +389,7 @@ export default function Game2048() {
           )}
         </div>
 
-        <div className="text-[#666] text-sm text-center">
+        <div className="text-[#AAA] text-sm text-center">
           <span className="text-[#00ffff]">WASD</span> 或 <span className="text-[#00ffff]">方向键</span> 控制移动
         </div>
       </div>

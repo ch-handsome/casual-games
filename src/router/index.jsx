@@ -6,11 +6,13 @@ import Game2048 from "@/page/games/2048";
 import GameTetris from "@/page/games/tetris";
 import GameEliminate from "@/page/games/eliminate";
 import GameThunderbolt from "@/page/games/thunderbolt";
+import GameBigWatermelonMerge from "@/page/games/bigWatermelonMerge";
 import icon2048 from "@/assets/icon/2048.png";
 import iconEliminate from "@/assets/icon/eliminate.png";
 import iconSnake from "@/assets/icon/snake.png";
 import iconTetris from "@/assets/icon/tetris.png";
 import iconThunderbolt from "@/assets/icon/thunderbolt.png";
+import iconBigWatermelonMerge from "@/assets/icon/bigWatermelonMerge.png";
 
 export const config = [
   {
@@ -42,6 +44,12 @@ export const config = [
     name: "雷电",
     icon: iconThunderbolt,
     element: <GameThunderbolt />,
+  },
+  {
+    path: "bigWatermelonMerge",
+    name: "合成大西瓜",
+    icon: iconBigWatermelonMerge,
+    element: <GameBigWatermelonMerge />,
   },
 ];
 

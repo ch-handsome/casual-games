@@ -551,7 +551,7 @@ export default function Tetris() {
         </div>
 
         {/* Desktop Controls Hint */}
-         <div className="text-[#666] text-sm text-center">
+         <div className="text-[#AAA] text-sm text-center">
           <span className="text-[#00ffff]">左右</span> 控制移动 | 
           <span className="text-[#00ffff]"> 上</span> 旋转 |
           <span className="text-[#00ffff]"> 下</span> 速降 |
