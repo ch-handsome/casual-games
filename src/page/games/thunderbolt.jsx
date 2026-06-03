@@ -31,15 +31,15 @@ const TRACKING_COLORS = {
 // 等级难度参数配置
 const LEVEL_CONFIG = {
   1: { spawnInterval: 1500, enemySpeed: 1.5, shootInterval: 2000, eliteRate: 0.03, hpMultiplier: 1.0 },
-  2: { spawnInterval: 1420, enemySpeed: 1.7, shootInterval: 1900, eliteRate: 0.04, hpMultiplier: 1.1 },
-  3: { spawnInterval: 1340, enemySpeed: 1.9, shootInterval: 1800, eliteRate: 0.05, hpMultiplier: 1.2 },
-  4: { spawnInterval: 1260, enemySpeed: 2.1, shootInterval: 1700, eliteRate: 0.06, hpMultiplier: 1.3 },
-  5: { spawnInterval: 1180, enemySpeed: 2.3, shootInterval: 1600, eliteRate: 0.07, hpMultiplier: 1.4 },
-  6: { spawnInterval: 1100, enemySpeed: 2.5, shootInterval: 1500, eliteRate: 0.08, hpMultiplier: 1.5 },
-  7: { spawnInterval: 1020, enemySpeed: 2.7, shootInterval: 1400, eliteRate: 0.09, hpMultiplier: 1.6 },
-  8: { spawnInterval: 940, enemySpeed: 2.9, shootInterval: 1300, eliteRate: 0.10, hpMultiplier: 1.7 },
-  9: { spawnInterval: 860, enemySpeed: 3.1, shootInterval: 1200, eliteRate: 0.11, hpMultiplier: 1.8 },
-  10: { spawnInterval: 780, enemySpeed: 3.3, shootInterval: 1100, eliteRate: 0.12, hpMultiplier: 2.0 },
+  2: { spawnInterval: 1420, enemySpeed: 1.7, shootInterval: 1900, eliteRate: 0.04, hpMultiplier: 1.5 },
+  3: { spawnInterval: 1340, enemySpeed: 1.9, shootInterval: 1800, eliteRate: 0.05, hpMultiplier: 2.0 },
+  4: { spawnInterval: 1260, enemySpeed: 2.1, shootInterval: 1700, eliteRate: 0.06, hpMultiplier: 2.5 },
+  5: { spawnInterval: 1180, enemySpeed: 2.3, shootInterval: 1600, eliteRate: 0.07, hpMultiplier: 3.0 },
+  6: { spawnInterval: 1100, enemySpeed: 2.5, shootInterval: 1500, eliteRate: 0.08, hpMultiplier: 3.5 },
+  7: { spawnInterval: 1020, enemySpeed: 2.7, shootInterval: 1400, eliteRate: 0.09, hpMultiplier: 4.0 },
+  8: { spawnInterval: 940, enemySpeed: 2.9, shootInterval: 1300, eliteRate: 0.10, hpMultiplier: 4.5 },
+  9: { spawnInterval: 860, enemySpeed: 3.1, shootInterval: 1200, eliteRate: 0.11, hpMultiplier: 5.5 },
+  10: { spawnInterval: 780, enemySpeed: 3.3, shootInterval: 1100, eliteRate: 0.12, hpMultiplier: 6.0 },
 }
 
 // 计算等级
@@ -170,9 +170,9 @@ export default function Thunderbolt() {
     state.enemies = []
     state.powerups = []
     state.particles = []
-    state.score = 0
+    state.score = 12000
     state.lives = 3
-    state.weaponLevel = 1
+    state.weaponLevel = 4
     state.level = 1
     state.shieldActive = false
     state.shieldTimer = 0
@@ -244,13 +244,13 @@ export default function Thunderbolt() {
           state.bullets.push(makeBullet(cx - 20, cy, -1, -6, {
             tracking: true,
             targetId: t4a ? t4a.id : null,
-            trackSpeed: 3.5,
+            trackSpeed: 5,
             damage: 1,
           }))
           state.bullets.push(makeBullet(cx + 20, cy, 1, -6, {
             tracking: true,
             targetId: t4b ? t4b.id : null,
-            trackSpeed: 3.5,
+            trackSpeed: 5,
             damage: 1,
           }))
         }
@@ -273,14 +273,14 @@ export default function Thunderbolt() {
             tracking: true,
             isSuperTracking: true,
             targetId: t5a ? t5a.id : null,
-            trackSpeed: 5,
+            trackSpeed: 7,
             damage: 2,
           }))
           state.bullets.push(makeBullet(cx + 24, cy, 1.5, -7, {
             tracking: true,
             isSuperTracking: true,
             targetId: t5b ? t5b.id : null,
-            trackSpeed: 5,
+            trackSpeed: 7,
             damage: 2,
           }))
         }
@@ -426,7 +426,7 @@ export default function Thunderbolt() {
           const dx = target.x - bullet.x
           const dy = target.y - bullet.y
           const dist = Math.sqrt(dx * dx + dy * dy) || 1
-          const steerStrength = bullet.isSuperTracking ? 0.5 : 0.35
+          const steerStrength = bullet.isSuperTracking ? 0.7 : 0.5
           const speed = bullet.trackSpeed || 4
           bullet.vx += (dx / dist) * steerStrength
           bullet.vy += (dy / dist) * steerStrength
