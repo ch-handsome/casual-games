@@ -6,6 +6,8 @@ import enemy2Img from '@/assets/thunderbolt/enemy2.png'
 import enemy3Img from '@/assets/thunderbolt/enemy3.png'
 import enemy4Img from '@/assets/thunderbolt/enemy4.png'
 
+let enemyIdCounter = 0
+
 const STORAGE_KEY = 'thunderbolt-best-score'
 const CANVAS_WIDTH = 1000
 const CANVAS_HEIGHT = 550
@@ -18,22 +20,26 @@ const BULLET_COLORS = {
   1: '#ffff00',
   2: '#00ff88',
   3: '#00ffff',
-  4: '#ff8800',
-  5: '#ff00ff',
+  4: '#00ffff',
+  5: '#00ffff',
+}
+const TRACKING_COLORS = {
+  normal: '#a855f7',
+  super: '#ff69b4',
 }
 
 // 等级难度参数配置
 const LEVEL_CONFIG = {
-  1: { spawnInterval: 1500, enemySpeed: 2.0, shootInterval: 2000, eliteRate: 0.03, hpMultiplier: 1.0 },
-  2: { spawnInterval: 1420, enemySpeed: 2.3, shootInterval: 1900, eliteRate: 0.04, hpMultiplier: 1.1 },
-  3: { spawnInterval: 1340, enemySpeed: 2.6, shootInterval: 1800, eliteRate: 0.05, hpMultiplier: 1.2 },
-  4: { spawnInterval: 1260, enemySpeed: 2.9, shootInterval: 1700, eliteRate: 0.06, hpMultiplier: 1.3 },
-  5: { spawnInterval: 1180, enemySpeed: 3.2, shootInterval: 1600, eliteRate: 0.07, hpMultiplier: 1.4 },
-  6: { spawnInterval: 1100, enemySpeed: 3.5, shootInterval: 1500, eliteRate: 0.08, hpMultiplier: 1.5 },
-  7: { spawnInterval: 1020, enemySpeed: 3.8, shootInterval: 1400, eliteRate: 0.09, hpMultiplier: 1.6 },
-  8: { spawnInterval: 940, enemySpeed: 4.1, shootInterval: 1300, eliteRate: 0.10, hpMultiplier: 1.7 },
-  9: { spawnInterval: 860, enemySpeed: 4.4, shootInterval: 1200, eliteRate: 0.11, hpMultiplier: 1.8 },
-  10: { spawnInterval: 780, enemySpeed: 4.7, shootInterval: 1100, eliteRate: 0.12, hpMultiplier: 2.0 },
+  1: { spawnInterval: 1500, enemySpeed: 1.5, shootInterval: 2000, eliteRate: 0.03, hpMultiplier: 1.0 },
+  2: { spawnInterval: 1420, enemySpeed: 1.7, shootInterval: 1900, eliteRate: 0.04, hpMultiplier: 1.1 },
+  3: { spawnInterval: 1340, enemySpeed: 1.9, shootInterval: 1800, eliteRate: 0.05, hpMultiplier: 1.2 },
+  4: { spawnInterval: 1260, enemySpeed: 2.1, shootInterval: 1700, eliteRate: 0.06, hpMultiplier: 1.3 },
+  5: { spawnInterval: 1180, enemySpeed: 2.3, shootInterval: 1600, eliteRate: 0.07, hpMultiplier: 1.4 },
+  6: { spawnInterval: 1100, enemySpeed: 2.5, shootInterval: 1500, eliteRate: 0.08, hpMultiplier: 1.5 },
+  7: { spawnInterval: 1020, enemySpeed: 2.7, shootInterval: 1400, eliteRate: 0.09, hpMultiplier: 1.6 },
+  8: { spawnInterval: 940, enemySpeed: 2.9, shootInterval: 1300, eliteRate: 0.10, hpMultiplier: 1.7 },
+  9: { spawnInterval: 860, enemySpeed: 3.1, shootInterval: 1200, eliteRate: 0.11, hpMultiplier: 1.8 },
+  10: { spawnInterval: 780, enemySpeed: 3.3, shootInterval: 1100, eliteRate: 0.12, hpMultiplier: 2.0 },
 }
 
 // 计算等级
@@ -50,6 +56,31 @@ const POWERUPS = {
   shield: { color: '#4e9ef0', duration: 10000 },
   health: { color: '#50c878', duration: 0 },
   speed: { color: '#ffe066', duration: 8000 },
+}
+
+// 寻找最近的敌人（排除指定ID）
+function findNearestEnemy(state, x, y, excludeIds = []) {
+  let nearest = null
+  let minDist = Infinity
+  for (const enemy of state.enemies) {
+    if (excludeIds.includes(enemy.id)) continue
+    const dx = enemy.x - x
+    const dy = enemy.y - y
+    const dist = dx * dx + dy * dy
+    if (dist < minDist) {
+      minDist = dist
+      nearest = enemy
+    }
+  }
+  return nearest
+}
+
+// 寻找最近的两个不同敌人
+function findTwoNearestEnemies(state, x, y) {
+  const first = findNearestEnemy(state, x, y)
+  if (!first) return []
+  const second = findNearestEnemy(state, x, y, [first.id])
+  return [first, second].filter(Boolean)
 }
 
 export default function Thunderbolt() {
@@ -86,6 +117,7 @@ export default function Thunderbolt() {
     speedTimer: 0,
     fireRateMultiplier: 1,
     lastFireTime: 0,
+    lastTrackingFireTime: 0,
     spawnTimer: 0,
     isPaused: false,
     isGameOver: false,
@@ -148,6 +180,7 @@ export default function Thunderbolt() {
     state.speedTimer = 0
     state.fireRateMultiplier = 1
     state.lastFireTime = 0
+    state.lastTrackingFireTime = 0
     state.spawnTimer = 0
     state.isPaused = false
     state.isGameOver = false
@@ -197,29 +230,60 @@ export default function Thunderbolt() {
         state.bullets.push(makeBullet(cx + 12, cy, 1.5))
         break
       case 4: {
-        // 中间直线
-        state.bullets.push(makeBullet(cx - 3, cy, 0, -8))
-        // 左侧直线
-        state.bullets.push(makeBullet(cx - 15, cy, 0, -8))
-        // 右侧直线
-        state.bullets.push(makeBullet(cx + 11, cy, 0, -8))
-        // 交叉弹道（左右摆动）
-        const crossOffset = Math.sin(Date.now() * 0.01) * 3
-        state.bullets.push(makeBullet(cx - 10 + crossOffset, cy, -2, -7))
-        state.bullets.push(makeBullet(cx + 6 - crossOffset, cy, 2, -7))
+        // === 4级武器：4发弹药 ===
+        // 中间2发直线子弹（每次发射）
+        state.bullets.push(makeBullet(cx - 6, cy, 0, -9))
+        state.bullets.push(makeBullet(cx + 6, cy, 0, -9))
+        // 两侧2发追踪弹（低频：每500ms发射一次）
+        const trackingCooldown4 = 500
+        if (currentTime - state.lastTrackingFireTime >= trackingCooldown4) {
+          state.lastTrackingFireTime = currentTime
+          const targets4 = findTwoNearestEnemies(state, cx, cy - 30)
+          const t4a = targets4[0]
+          const t4b = targets4[1]
+          state.bullets.push(makeBullet(cx - 20, cy, -1, -6, {
+            tracking: true,
+            targetId: t4a ? t4a.id : null,
+            trackSpeed: 3.5,
+            damage: 1,
+          }))
+          state.bullets.push(makeBullet(cx + 20, cy, 1, -6, {
+            tracking: true,
+            targetId: t4b ? t4b.id : null,
+            trackSpeed: 3.5,
+            damage: 1,
+          }))
+        }
         break
       }
       case 5: {
-        // 中间子弹（带发光圈）
-        state.bullets.push(makeBullet(cx - 3, cy, 0, -9, { hasGlow: true }))
-        // 左侧子弹
-        state.bullets.push(makeBullet(cx - 16, cy, -0.5, -9, { hasGlow: true }))
-        // 右侧子弹
-        state.bullets.push(makeBullet(cx + 12, cy, 0.5, -9, { hasGlow: true }))
-        // 最左侧宽散弹
-        state.bullets.push(makeBullet(cx - 28, cy, -2.5, -8))
-        // 最右侧宽散弹
-        state.bullets.push(makeBullet(cx + 24, cy, 2.5, -8))
+        // === 5级武器：5发弹药 ===
+        // 中间3发加强直线子弹（带发光圈，伤害=2，每次发射）
+        state.bullets.push(makeBullet(cx - 12, cy, -0.3, -10, { hasGlow: true, damage: 2 }))
+        state.bullets.push(makeBullet(cx, cy, 0, -10, { hasGlow: true, damage: 2 }))
+        state.bullets.push(makeBullet(cx + 12, cy, 0.3, -10, { hasGlow: true, damage: 2 }))
+        // 两侧2发超级追踪弹（高频：每250ms发射一次，追踪不同敌人）
+        const trackingCooldown5 = 250
+        if (currentTime - state.lastTrackingFireTime >= trackingCooldown5) {
+          state.lastTrackingFireTime = currentTime
+          const targets5 = findTwoNearestEnemies(state, cx, cy - 30)
+          const t5a = targets5[0]
+          const t5b = targets5[1]
+          state.bullets.push(makeBullet(cx - 24, cy, -1.5, -7, {
+            tracking: true,
+            isSuperTracking: true,
+            targetId: t5a ? t5a.id : null,
+            trackSpeed: 5,
+            damage: 2,
+          }))
+          state.bullets.push(makeBullet(cx + 24, cy, 1.5, -7, {
+            tracking: true,
+            isSuperTracking: true,
+            targetId: t5b ? t5b.id : null,
+            trackSpeed: 5,
+            damage: 2,
+          }))
+        }
         break
       }
     }
@@ -242,6 +306,7 @@ export default function Thunderbolt() {
     const hpMultiplier = config.hpMultiplier
 
     const enemy = {
+      id: enemyIdCounter++,
       type,
       x: Math.random() * (CANVAS_WIDTH - baseConfig.width) + baseConfig.width / 2,
       y: -baseConfig.height,
@@ -258,12 +323,11 @@ export default function Thunderbolt() {
   }, [])
 
   const spawnPowerup = useCallback((x, y) => {
-    const types = ['weapon', 'shield', 'health', 'speed']
     const rand = Math.random()
     let type
-    if (rand < 0.4) type = 'weapon'
-    else if (rand < 0.6) type = 'shield'
-    else if (rand < 0.8) type = 'health'
+    if (rand < 0.40) type = 'weapon'
+    else if (rand < 0.65) type = 'shield'
+    else if (rand < 0.85) type = 'health'
     else type = 'speed'
 
     gameStateRef.current.powerups.push({
@@ -341,10 +405,39 @@ export default function Thunderbolt() {
     // Fire bullet
     fireBullet(state, currentTime)
 
-    // Update player bullets
+    // Update player bullets (with tracking logic)
     state.bullets = state.bullets.filter(bullet => {
       bullet.trail.unshift({ x: bullet.x, y: bullet.y })
-      if (bullet.trail.length > 5) bullet.trail.pop()
+      const maxTrail = bullet.tracking ? 14 : bullet.hasGlow ? 8 : 5
+      if (bullet.trail.length > maxTrail) bullet.trail.pop()
+
+      // 追踪弹：每帧修正方向，尾随目标敌人
+      if (bullet.tracking) {
+        let target = null
+        if (bullet.targetId != null) {
+          target = state.enemies.find(e => e.id === bullet.targetId)
+        }
+        if (!target) {
+          // 目标丢失，重新寻找最近敌人
+          target = findNearestEnemy(state, bullet.x, bullet.y)
+          if (target) bullet.targetId = target.id
+        }
+        if (target) {
+          const dx = target.x - bullet.x
+          const dy = target.y - bullet.y
+          const dist = Math.sqrt(dx * dx + dy * dy) || 1
+          const steerStrength = bullet.isSuperTracking ? 0.5 : 0.35
+          const speed = bullet.trackSpeed || 4
+          bullet.vx += (dx / dist) * steerStrength
+          bullet.vy += (dy / dist) * steerStrength
+          // 归一化速度
+          const currentSpeed = Math.sqrt(bullet.vx * bullet.vx + bullet.vy * bullet.vy)
+          if (currentSpeed > 0) {
+            bullet.vx = (bullet.vx / currentSpeed) * speed
+            bullet.vy = (bullet.vy / currentSpeed) * speed
+          }
+        }
+      }
 
       bullet.y += bullet.vy
       if (bullet.vx) bullet.x += bullet.vx
@@ -442,7 +535,7 @@ export default function Thunderbolt() {
         const dx = bullet.x - enemy.x
         const dy = bullet.y - enemy.y
         if (Math.abs(dx) < enemy.width / 2 && Math.abs(dy) < enemy.height / 2) {
-          enemy.hp--
+          enemy.hp -= (bullet.damage || 1)
           if (enemy.hp <= 0) {
             createExplosion(enemy.x, enemy.y, enemy.color, 20)
             state.score += enemy.score
@@ -730,28 +823,75 @@ export default function Thunderbolt() {
 
     // Draw player bullets with trails
     state.bullets.forEach(bullet => {
-      const bulletColor = BULLET_COLORS[bullet.level] || BULLET_COLORS[1]
+      if (bullet.tracking) {
+        // === 追踪弹绘制（紫色/粉色渐变 + 光晕 + 长拖尾） ===
+        const trackColor = bullet.isSuperTracking ? TRACKING_COLORS.super : TRACKING_COLORS.normal
+        const trackSize = bullet.isSuperTracking ? BULLET_RADIUS + 4 : BULLET_RADIUS + 2
 
-      // Level 5 glow ring (draw behind trail and bullet)
-      if (bullet.hasGlow) {
-        drawGlowRing(ctx, bullet.x, bullet.y, BULLET_RADIUS + 6, bulletColor)
-      }
+        // 外层光晕
+        ctx.save()
+        ctx.shadowBlur = 12
+        ctx.shadowColor = trackColor
+        ctx.globalAlpha = 0.5
+        ctx.fillStyle = trackColor
+        ctx.beginPath()
+        ctx.arc(bullet.x, bullet.y, trackSize + 5, 0, Math.PI * 2)
+        ctx.fill()
+        ctx.restore()
 
-      // Trail
-      bullet.trail.forEach((t, i) => {
-        ctx.globalAlpha = 0.5 - i * 0.1
+        // 中层发光圈
+        drawGlowRing(ctx, bullet.x, bullet.y, trackSize + 4, trackColor)
+
+        // 拖尾（更长、更明显）
+        bullet.trail.forEach((t, i) => {
+          const alpha = 1 - i / bullet.trail.length
+          ctx.globalAlpha = alpha * 0.7
+          const gradient = ctx.createRadialGradient(t.x, t.y, 0, t.x, t.y, trackSize)
+          gradient.addColorStop(0, '#ffffff')
+          gradient.addColorStop(0.3, trackColor)
+          gradient.addColorStop(1, 'transparent')
+          ctx.fillStyle = gradient
+          ctx.beginPath()
+          ctx.arc(t.x, t.y, trackSize - i * 0.25, 0, Math.PI * 2)
+          ctx.fill()
+        })
+        ctx.globalAlpha = 1
+
+        // 子弹本体（径向渐变）
+        const bodyGradient = ctx.createRadialGradient(bullet.x, bullet.y, 0, bullet.x, bullet.y, trackSize)
+        bodyGradient.addColorStop(0, '#ffffff')
+        bodyGradient.addColorStop(0.35, trackColor)
+        bodyGradient.addColorStop(1, 'transparent')
+        ctx.fillStyle = bodyGradient
+        ctx.beginPath()
+        ctx.arc(bullet.x, bullet.y, trackSize, 0, Math.PI * 2)
+        ctx.fill()
+      } else {
+        // === 普通子弹绘制 ===
+        const bulletColor = BULLET_COLORS[bullet.level] || BULLET_COLORS[1]
+        const bulletSize = BULLET_RADIUS + (bullet.level >= 4 ? 1 : 0) + (bullet.damage >= 2 ? 1 : 0)
+
+        // Level 5 glow ring (draw behind trail and bullet)
+        if (bullet.hasGlow) {
+          drawGlowRing(ctx, bullet.x, bullet.y, bulletSize + 6, bulletColor)
+        }
+
+        // Trail
+        bullet.trail.forEach((t, i) => {
+          ctx.globalAlpha = 0.5 - i * 0.1
+          ctx.fillStyle = bulletColor
+          ctx.beginPath()
+          ctx.arc(t.x, t.y, bulletSize - i * 0.5, 0, Math.PI * 2)
+          ctx.fill()
+        })
+        ctx.globalAlpha = 1
+
+        // Bullet body
         ctx.fillStyle = bulletColor
         ctx.beginPath()
-        ctx.arc(t.x, t.y, BULLET_RADIUS - i * 0.5, 0, Math.PI * 2)
+        ctx.arc(bullet.x, bullet.y, bulletSize, 0, Math.PI * 2)
         ctx.fill()
-      })
-      ctx.globalAlpha = 1
-
-      // Bullet body
-      ctx.fillStyle = bulletColor
-      ctx.beginPath()
-      ctx.arc(bullet.x, bullet.y, BULLET_RADIUS + (bullet.level >= 4 ? 1 : 0), 0, Math.PI * 2)
-      ctx.fill()
+      }
     })
 
     // Draw player
