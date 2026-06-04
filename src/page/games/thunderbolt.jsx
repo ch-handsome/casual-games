@@ -1136,7 +1136,8 @@ export default function Thunderbolt() {
     // Update enemy bullets
     state.enemyBullets = state.enemyBullets.filter(bullet => {
       bullet.y += bullet.vy
-      return bullet.y < CANVAS_HEIGHT + 10
+      if (bullet.vx) bullet.x += bullet.vx
+      return bullet.y > -20 && bullet.y < CANVAS_HEIGHT + 10 && bullet.x > -20 && bullet.x < CANVAS_WIDTH + 20
     })
 
     // Update stars
