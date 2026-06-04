@@ -23,9 +23,10 @@ const CANVAS_WIDTH = 1000
 const CANVAS_HEIGHT = 550
 const PLAYER_SIZE = 20
 const BULLET_RADIUS = 4
-const SCORE_PER_LEVEL = 2000
+const SCORE_PER_LEVEL = 1000
 const MAX_LEVEL = 50
 const MAX_WEAPON_LEVEL = 5
+const BOSS_INTERVAL = 5 // 每5个难度等级触发一次Boss
 const BULLET_COLORS = {
   1: '#ffff00',
   2: '#00ff88',
@@ -50,18 +51,21 @@ const getLevelConfig = (level) => {
   }
 }
 
+// Boss触发分数 = SCORE_PER_LEVEL * BOSS_INTERVAL * bossNumber
+const getBossScore = (bossIndex) => SCORE_PER_LEVEL * BOSS_INTERVAL * (bossIndex + 1)
+
 // Boss配置
 const BOSS_CONFIG = [
-  { level: 5,  hp: 300,  speed: 1.5, amplitude: 150, imageKey: 'boss_1',  name: '冰霜' },
-  { level: 10, hp: 500,  speed: 1.5, amplitude: 150, imageKey: 'boss_2',  name: '地狱火' },
-  { level: 15, hp: 750,  speed: 1.5, amplitude: 150, imageKey: 'boss_3',  name: '铁幕' },
-  { level: 20, hp: 1000, speed: 2.0, amplitude: 200, imageKey: 'boss_4',  name: '暗影' },
-  { level: 25, hp: 1400, speed: 2.0, amplitude: 200, imageKey: 'boss_5',  name: '堡垒' },
-  { level: 30, hp: 1800, speed: 2.0, amplitude: 200, imageKey: 'boss_6',  name: '毁灭者' },
-  { level: 35, hp: 2400, speed: 2.5, amplitude: 250, imageKey: 'boss_7',  name: '掠食者' },
-  { level: 40, hp: 3000, speed: 2.5, amplitude: 250, imageKey: 'boss_8',  name: '毒刺' },
-  { level: 45, hp: 3800, speed: 2.5, amplitude: 250, imageKey: 'boss_9',  name: '巨像' },
-  { level: 50, hp: 5000, speed: 3.0, amplitude: 300, imageKey: 'boss_10', name: '蛇发女妖' },
+  { hp: 300,  speed: 1.5, amplitude: 150, imageKey: 'boss_1',  name: '冰霜' },
+  { hp: 500,  speed: 1.5, amplitude: 150, imageKey: 'boss_2',  name: '地狱火' },
+  { hp: 750,  speed: 1.5, amplitude: 150, imageKey: 'boss_3',  name: '铁幕' },
+  { hp: 1000, speed: 2.0, amplitude: 200, imageKey: 'boss_4',  name: '暗影' },
+  { hp: 1400, speed: 2.0, amplitude: 200, imageKey: 'boss_5',  name: '堡垒' },
+  { hp: 1800, speed: 2.0, amplitude: 200, imageKey: 'boss_6',  name: '毁灭者' },
+  { hp: 2400, speed: 2.5, amplitude: 250, imageKey: 'boss_7',  name: '掠食者' },
+  { hp: 3000, speed: 2.5, amplitude: 250, imageKey: 'boss_8',  name: '毒刺' },
+  { hp: 3800, speed: 2.5, amplitude: 250, imageKey: 'boss_9',  name: '巨像' },
+  { hp: 5000, speed: 3.0, amplitude: 300, imageKey: 'boss_10', name: '蛇发女妖' },
 ]
 
 // 计算等级
@@ -169,6 +173,7 @@ export default function Thunderbolt() {
 
   const gameLoopRef = useRef(null)
   const lastTimeRef = useRef(0)
+  const levelUpTimeoutRef = useRef(null)
   const imagesRef = useRef({})
 
   // 图片素材 - Vite 导入的 URL 创建 Image 对象
@@ -900,7 +905,8 @@ export default function Thunderbolt() {
 
   // ==================== Boss初始化 ====================
 
-  const initBoss = (state, bossConfig) => {
+  const initBoss = (state, bossConfig, bossIndex) => {
+    const bossScore = getBossScore(bossIndex)
     state.bossState.active = true
     state.bossState.phase = 1
     state.bossState.phaseTransition = false
@@ -910,7 +916,8 @@ export default function Thunderbolt() {
     state.bossState.restoreTimer = 0
 
     state.bossState.boss = {
-      level: bossConfig.level,
+      score: bossScore,
+      bossIndex,
       hp: bossConfig.hp,
       maxHp: bossConfig.hp,
       x: CANVAS_WIDTH / 2,
@@ -1029,8 +1036,7 @@ export default function Thunderbolt() {
     }
 
     // 获取当前攻击模式
-    const bossIndex = BOSS_CONFIG.findIndex(bc => bc.level === boss.level)
-    const patterns = bossIndex >= 0 ? getBossPatterns(bossIndex) : null
+    const patterns = getBossPatterns(boss.bossIndex)
     const currentPattern = patterns ? patterns[bs.phase - 1] : null
 
     // 执行攻击
@@ -1149,15 +1155,12 @@ export default function Thunderbolt() {
 
     // 检查是否触发Boss
     if (!state.bossState.active && !state.bossState.cleared && !state.isGameOver) {
-      const bossLevelsCheck = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50]
-      const triggeredBoss = bossLevelsCheck.find(bl =>
-        state.level >= bl && !state.bossState.defeatedBosses.includes(bl)
-      )
-      if (triggeredBoss !== undefined) {
-        const bossCfg = BOSS_CONFIG.find(bc => bc.level === triggeredBoss)
-        if (bossCfg) {
-          initBoss(state, bossCfg)
-        }
+      const triggeredIndex = BOSS_CONFIG.findIndex((_, i) => {
+        const threshold = getBossScore(i)
+        return state.score >= threshold && !state.bossState.defeatedBosses.includes(threshold)
+      })
+      if (triggeredIndex !== -1) {
+        initBoss(state, BOSS_CONFIG[triggeredIndex], triggeredIndex)
       }
     }
 
@@ -1282,8 +1285,12 @@ export default function Thunderbolt() {
             if (newLevel > state.level) {
               state.level = newLevel
               setGameLevel(newLevel)
+              if (levelUpTimeoutRef.current) clearTimeout(levelUpTimeoutRef.current)
               setShowLevelUp(true)
-              setTimeout(() => setShowLevelUp(false), 1500)
+              levelUpTimeoutRef.current = setTimeout(() => {
+                setShowLevelUp(false)
+                levelUpTimeoutRef.current = null
+              }, 1500)
             }
 
             // Drop powerup chance
@@ -1336,8 +1343,8 @@ export default function Thunderbolt() {
               spawnPowerup(boss.x, boss.y)
               spawnPowerup(boss.x + 30, boss.y)
 
-              // 标记击败
-              state.bossState.defeatedBosses.push(boss.level)
+              // 标记击败（记录分数阈值）
+              state.bossState.defeatedBosses.push(boss.score)
               state.bossState.active = false
               state.bossState.boss = null
               state.bossState.lasers = []
@@ -1347,10 +1354,6 @@ export default function Thunderbolt() {
               state.bossState.defeatTextTimer = 2000
               setShowBossDefeat(true)
               setTimeout(() => setShowBossDefeat(false), 2000)
-
-              // 击败Boss后难度+1
-              state.level = Math.min(MAX_LEVEL, state.level + 1)
-              setGameLevel(state.level)
 
               // 检查通关
               if (state.bossState.defeatedBosses.length >= 10) {
@@ -1762,7 +1765,7 @@ export default function Thunderbolt() {
         ctx.fillStyle = '#ffffff'
         ctx.font = 'bold 14px Arial'
         ctx.textAlign = 'center'
-        ctx.fillText(`${boss.name} Lv.${boss.level} | 阶段 ${bs.phase}/3`, CANVAS_WIDTH / 2, hpBarY + hpBarHeight + 18)
+        ctx.fillText(`${boss.name} (${boss.score}分) | 阶段 ${bs.phase}/3`, CANVAS_WIDTH / 2, hpBarY + hpBarHeight + 18)
 
         // HP数字
         ctx.fillText(`${boss.hp} / ${boss.maxHp}`, CANVAS_WIDTH / 2, hpBarY + hpBarHeight + 35)
@@ -2079,7 +2082,7 @@ export default function Thunderbolt() {
               </div>
               <button
                 onClick={startGame}
-                className="px-12 py-3.5 text-lg bg-gradient-to-b from-[#00e5f0] to-[#00b8d4] text-white rounded-xl font-bold cursor-pointer transition-all duration-100 border-t border-[#5cf0ff] shadow-[0_4px_0_#008899,0_5px_10px_rgba(0,0,0,0.3)] hover:shadow-[0_4px_0_#008899,0_6px_15px_rgba(0,229,240,0.4)] active:shadow-[0_2px_0_#008899,0_2px_5px_rgba(0,0,0,0.3)] active:translate-y-1"              >                再玩一次              </button>            </div>          )}          {/* 等级提升特效 */}          {showLevelUp && (            <div className="absolute inset-0 pointer-events-none flex items-center justify-center">              <div className="animate-ping text-[#ffe066] text-6xl font-bold drop-shadow-[0_0_20px_rgba(255,224,102,0.8)]">                Lv.{gameLevel}!              </div>            </div>          )}          {/* 武器升级特效 */}          {showWeaponUp && (            <div className="absolute top-1/2 left-1/2 pointer-events-none -translate-x-1/2 -translate-y-1/2">              <div className="animate-bounce text-[#ff3333] text-5xl font-bold drop-shadow-[0_0_25px_rgba(255,51,51,0.9)]">                ⬆ 武器升级 Lv.{weaponLevel}!</div>            </div>          )}          {/* 武器降级特效 */}          {showWeaponDown && (            <div className="absolute top-1/2 left-1/2 pointer-events-none -translate-x-1/2 -translate-y-1/2">              <div className="animate-pulse text-[#888888] text-4xl font-bold drop-shadow-[0_0_15px_rgba(136,136,136,0.7)]">                ⬇ 武器降级 Lv.{weaponLevel}</div>            </div>          )}          {/* Boss阶段提示 */}          {showBossPhase && (            <div className="absolute top-1/4 left-1/2 pointer-events-none -translate-x-1/2">              <div className="animate-pulse text-[#ff6600] text-5xl font-bold drop-shadow-[0_0_20px_rgba(255,102,0,0.9)]">                {bossPhaseText}              </div>            </div>          )}          {/* Boss击败提示 */}          {showBossDefeat && (            <div className="absolute top-1/3 left-1/2 pointer-events-none -translate-x-1/2">              <div className="animate-bounce text-[#ffe066] text-4xl font-bold drop-shadow-[0_0_20px_rgba(255,224,102,0.9)]">                🎉 Boss击败！难度+1              </div>            </div>          )}          {/* 通关覆盖层 */}          {bossCleared && (            <div className="absolute inset-0 bg-black/90 rounded-lg flex flex-col items-center justify-center gap-5 backdrop-blur-sm">              <div className="text-[#ffd700] text-5xl font-bold text-center drop-shadow-[0_0_30px_rgba(255,215,0,0.9)]">                🎉 恭喜通关！<br/>你击败了所有Boss！              </div>              <div className="text-white text-2xl">                最终得分: <span className="text-[#00e5f0] text-4xl">{score}</span>              </div>              <button                onClick={startGame}                className="px-12 py-3.5 text-lg bg-gradient-to-b from-[#ffd700] to-[#ff8c00] text-white rounded-xl font-bold cursor-pointer transition-all duration-100 border-t border-[#ffed4a] shadow-[0_4px_0_#cc7000,0_5px_10px_rgba(0,0,0,0.3)] hover:shadow-[0_4px_0_#cc7000,0_6px_15px_rgba(255,215,0,0.4)] active:shadow-[0_2px_0_#cc7000,0_2px_5px_rgba(0,0,0,0.3)] active:translate-y-1"              >                再玩一次              </button>            </div>          )}        </div>
+                className="px-12 py-3.5 text-lg bg-gradient-to-b from-[#00e5f0] to-[#00b8d4] text-white rounded-xl font-bold cursor-pointer transition-all duration-100 border-t border-[#5cf0ff] shadow-[0_4px_0_#008899,0_5px_10px_rgba(0,0,0,0.3)] hover:shadow-[0_4px_0_#008899,0_6px_15px_rgba(0,229,240,0.4)] active:shadow-[0_2px_0_#008899,0_2px_5px_rgba(0,0,0,0.3)] active:translate-y-1"              >                再玩一次              </button>            </div>          )}          {/* 等级提升特效 */}          {showLevelUp && (            <div className="absolute inset-0 pointer-events-none flex items-center justify-center">              <div className="animate-bounce text-[#ffe066] text-6xl font-bold drop-shadow-[0_0_20px_rgba(255,224,102,0.8)]">                Lv.{gameLevel}!              </div>            </div>          )}          {/* 武器升级特效 */}          {showWeaponUp && (            <div className="absolute top-1/2 left-1/2 pointer-events-none -translate-x-1/2 -translate-y-1/2">              <div className="animate-bounce text-[#ff3333] text-5xl font-bold drop-shadow-[0_0_25px_rgba(255,51,51,0.9)]">                ⬆ 武器升级 Lv.{weaponLevel}!</div>            </div>          )}          {/* 武器降级特效 */}          {showWeaponDown && (            <div className="absolute top-1/2 left-1/2 pointer-events-none -translate-x-1/2 -translate-y-1/2">              <div className="animate-pulse text-[#888888] text-4xl font-bold drop-shadow-[0_0_15px_rgba(136,136,136,0.7)]">                ⬇ 武器降级 Lv.{weaponLevel}</div>            </div>          )}          {/* Boss阶段提示 */}          {showBossPhase && (            <div className="absolute top-1/4 left-1/2 pointer-events-none -translate-x-1/2">              <div className="animate-pulse text-[#ff6600] text-5xl font-bold drop-shadow-[0_0_20px_rgba(255,102,0,0.9)]">                {bossPhaseText}              </div>            </div>          )}          {/* Boss击败提示 */}          {showBossDefeat && (            <div className="absolute top-1/3 left-1/2 pointer-events-none -translate-x-1/2">              <div className="animate-bounce text-[#ffe066] text-4xl font-bold drop-shadow-[0_0_20px_rgba(255,224,102,0.9)]">                🎉 Boss击败！              </div>            </div>          )}          {/* 通关覆盖层 */}          {bossCleared && (            <div className="absolute inset-0 bg-black/90 rounded-lg flex flex-col items-center justify-center gap-5 backdrop-blur-sm">              <div className="text-[#ffd700] text-5xl font-bold text-center drop-shadow-[0_0_30px_rgba(255,215,0,0.9)]">                🎉 恭喜通关！<br/>你击败了所有Boss！              </div>              <div className="text-white text-2xl">                最终得分: <span className="text-[#00e5f0] text-4xl">{score}</span>              </div>              <button                onClick={startGame}                className="px-12 py-3.5 text-lg bg-gradient-to-b from-[#ffd700] to-[#ff8c00] text-white rounded-xl font-bold cursor-pointer transition-all duration-100 border-t border-[#ffed4a] shadow-[0_4px_0_#cc7000,0_5px_10px_rgba(0,0,0,0.3)] hover:shadow-[0_4px_0_#cc7000,0_6px_15px_rgba(255,215,0,0.4)] active:shadow-[0_2px_0_#cc7000,0_2px_5px_rgba(0,0,0,0.3)] active:translate-y-1"              >                再玩一次              </button>            </div>          )}        </div>
 
         {/* Controls */}
         <div className="flex justify-between items-center mt-4 px-4 py-3 bg-[rgba(0,0,0,0.3)] rounded-lg border border-[rgba(100,100,200,0.2)]">
