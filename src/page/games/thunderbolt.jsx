@@ -26,7 +26,7 @@ const BULLET_RADIUS = 4
 const SCORE_PER_LEVEL = 1000
 const MAX_LEVEL = 50
 const MAX_WEAPON_LEVEL = 5
-const BOSS_INTERVAL = 5 // 每5个难度等级触发一次Boss
+const BOSS_INTERVAL = 3 // 每3个难度等级触发一次Boss
 const BULLET_COLORS = {
   1: '#ffff00',
   2: '#00ff88',
