@@ -26,7 +26,7 @@ const BULLET_RADIUS = 4
 const SCORE_PER_LEVEL = 1000
 const MAX_LEVEL = 50
 const MAX_WEAPON_LEVEL = 5
-const BOSS_INTERVAL = 3 // 每3个难度等级触发一次Boss
+const BOSS_INTERVAL = 2 // 每2个难度等级触发一次Boss
 const BULLET_COLORS = {
   1: '#ffff00',
   2: '#00ff88',
@@ -79,7 +79,7 @@ const ENEMY_TYPES = {
 }
 const POWERUPS = {
   weapon: { color: '#ff3333', duration: 0 },
-  shield: { color: '#4e9ef0', duration: 10000 },
+  shield: { color: '#4e9ef0', duration: 3000 },
   health: { color: '#50c878', duration: 0 },
   speed: { color: '#ffe066', duration: 8000 },
 }
@@ -116,6 +116,7 @@ export default function Thunderbolt() {
   const [weaponLevel, setWeaponLevel] = useState(1)
   const [isPaused, setIsPaused] = useState(false)
   const [isGameOver, setIsGameOver] = useState(false)
+  const [shieldCount, setShieldCount] = useState(0)
   const [fireRate, setFireRate] = useState('正常')
   const [gameLevel, setGameLevel] = useState(1)
   const [showLevelUp, setShowLevelUp] = useState(false)
@@ -143,6 +144,7 @@ export default function Thunderbolt() {
     level: 1,
     shieldActive: false,
     shieldTimer: 0,
+    shieldCount: 0,
     speedActive: false,
     speedTimer: 0,
     fireRateMultiplier: 1,
@@ -234,6 +236,7 @@ export default function Thunderbolt() {
     state.level = 1
     state.shieldActive = false
     state.shieldTimer = 0
+    state.shieldCount = 0
     state.speedActive = false
     state.speedTimer = 0
     state.fireRateMultiplier = 1
@@ -1523,8 +1526,10 @@ export default function Thunderbolt() {
             }
             break
           case 'shield':
-            state.shieldActive = true
-            state.shieldTimer = powerup.duration
+            if (state.shieldCount < 3) {
+              state.shieldCount++
+              setShieldCount(state.shieldCount)
+            }
             break
           case 'health':
             if (state.lives < 3) {
@@ -1975,6 +1980,19 @@ export default function Thunderbolt() {
         state.isPaused = !state.isPaused
         setIsPaused(state.isPaused)
       }
+
+      // Space 键触发护盾
+      if (e.code === 'Space') {
+        e.preventDefault()
+        if (!state.isPaused && !state.isGameOver) {
+          if (state.shieldCount > 0 && !state.shieldActive) {
+            state.shieldCount--
+            setShieldCount(state.shieldCount)
+            state.shieldActive = true
+            state.shieldTimer = POWERUPS.shield.duration
+          }
+        }
+      }
     }
 
     const handleKeyUp = (e) => {
@@ -2047,9 +2065,28 @@ export default function Thunderbolt() {
       <div className="bg-gradient-to-b from-[rgba(30,30,60,0.9)] to-[rgba(20,20,40,0.95)] rounded-2xl p-5 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.1)] border border-[rgba(100,100,200,0.3)]">
         {/* Header */}
         <div className="flex justify-between items-center mb-4 px-4 py-3 bg-[rgba(0,0,0,0.3)] rounded-lg border border-[rgba(100,100,200,0.2)]">
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center">
             {Array(3).fill(0).map((_, i) => (
               <span key={i} className={`text-2xl ${i < lives ? 'opacity-100' : 'opacity-30 grayscale'}`}>❤️</span>
+            ))}
+            <span className="mx-2 text-[#666]">|</span>
+            {[...Array(3)].map((_, i) => (
+              <span key={i} className={`inline-flex ${i < shieldCount ? '' : 'opacity-25'}`}
+                    style={i < shieldCount ? { filter: 'drop-shadow(0 0 4px rgba(78,158,240,0.9))' } : {}}>
+                <svg viewBox="0 0 24 24" className="w-6 h-6">
+                  <defs>
+                    <linearGradient id={`sg-${i}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#8cd4ff" />
+                      <stop offset="100%" stopColor="#4e9ef0" />
+                    </linearGradient>
+                  </defs>
+                  <path d="M12 2L3 6v6c0 5.25 3.83 10.25 9 12 5.17-1.75 9-6.75 9-12V6l-9-4z"
+                        fill={`url(#sg-${i})`}
+                        stroke="white"
+                        strokeWidth="1.5"
+                        strokeLinejoin="round" />
+                </svg>
+              </span>
             ))}
           </div>
           <div className="text-white text-lg font-bold">
@@ -2111,7 +2148,9 @@ export default function Thunderbolt() {
       <div className="mt-5 text-[#AAA] text-sm text-center">
         <span className="text-[#00ffff]">鼠标移动</span> 或 
         <span className="text-[#00ffff]"> WASD/方向键</span> 控制 | 
-        <span className="text-[#00ffff]"> P</span> 键暂停 | 🔴 武器升级 | 🔵 护盾 | 🟢 回血 | 🟡 射速翻倍
+        <span className="text-[#00ffff]"> P</span> 键暂停 |
+        <span className="text-[#00ffff]"> Space</span> 护盾 |
+        🔴 武器升级 | 🔵 护盾 | 🟢 回血 | 🟡 射速翻倍
       </div>
     </div>
   )
